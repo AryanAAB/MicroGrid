@@ -1,0 +1,30 @@
+package org.example.microgrid.meter;
+
+import java.time.Instant;
+
+public abstract class Meter
+{
+    private final String meterId;
+
+    public Meter(String meterId)
+    {
+        this.meterId = meterId;
+    }
+
+    public abstract void readEnergy();
+    public abstract double getImportEnergy();
+    public abstract double getExportEnergy();
+    public abstract Instant getReadingTimestamp();
+
+    public final String getMeterId()
+    {
+        return this.meterId;
+    }
+
+    public final MeterData getMeterSnapshot()
+    {
+        return new MeterData(getImportEnergy(), getExportEnergy(), getReadingTimestamp().getEpochSecond());
+    }
+
+    public static record MeterData(double demand, double supply, long timestamp) {}
+}
