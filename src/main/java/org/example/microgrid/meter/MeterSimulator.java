@@ -79,7 +79,7 @@ public class MeterSimulator extends Meter
         );
     }
 
-    public double importPowerKw()
+    private double importPowerKw()
     {
         double t = fractionOfDay();
 
@@ -100,7 +100,7 @@ public class MeterSimulator extends Meter
         return Math.max(0.0, averageDemandKw * (1 + variation) + noise);
     }
 
-    public double exportPowerKw()
+    private double exportPowerKw()
     {
         double t = fractionOfDay();
 

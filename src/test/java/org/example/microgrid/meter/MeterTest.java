@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -49,20 +51,22 @@ public class MeterTest
         List<Double> exportList = new ArrayList<>();
         List<Double> timeList = new ArrayList<>();
 
+        Instant now = meter.getReadingTimestamp();
+
         for (int i = 0; i < steps; i++)
         {
-            double importPower = meter.importPowerKw();
-            double exportPower = meter.exportPowerKw();
+            meter.readEnergy();
 
-            // Check ranges
+            double importPower = meter.getImportEnergy();
+            double exportPower = meter.getExportEnergy();
+            Instant time = meter.getReadingTimestamp();
+
             assertTrue(importPower >= 0.0);
             assertTrue(exportPower >= 0.0 && exportPower <= 3.0);
 
-            meter.readEnergy();
-
-            importList.add(meter.getImportEnergy());
-            exportList.add(meter.getExportEnergy());
-            timeList.add((double) i * Constants.STEP_TO_SECONDS / Constants.SEC_IN_HOUR);
+            importList.add(importPower);
+            exportList.add(exportPower);
+            timeList.add(1.0 * Duration.between(now, time).toSeconds() / Constants.SEC_IN_HOUR);
         }
 
         // After simulation, energy should be positive
