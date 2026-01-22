@@ -1,0 +1,5 @@
+com\example\backend\service\FirestoreService.class
+com\example\backend\controller\UserController.class
+com\example\backend\BackendApplication.class
+com\example\backend\service\FirebaseAuthService.class
+com\example\backend\config\FirebaseConfig.class
