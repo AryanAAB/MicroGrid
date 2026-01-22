@@ -23,8 +23,8 @@ public class House {
     /* =========================
        Instantaneous Rates (kW)
        ========================= */
-    private double currentConsumptionRate; // kW
-    private double currentProductionRate;  // kW
+    private double currentConsumptionRate;
+    private double currentProductionRate;
 
     /* =========================
        Energy Totals (kWh)
@@ -41,8 +41,8 @@ public class House {
     /* =========================
        Time Tracking
        ========================= */
-    private Instant t1; // last total update
-    private Instant t2; // last 5-min update
+    private Instant t1;
+    private Instant t2;
 
     /* =========================
        Scheduler
@@ -55,7 +55,6 @@ public class House {
     public House(Meter meter) {
         this.meter = meter;
 
-        // Initialize all numeric fields explicitly
         this.currentConsumptionRate = 0.0;
         this.currentProductionRate = 0.0;
 
@@ -69,7 +68,6 @@ public class House {
         this.t1 = now;
         this.t2 = now;
 
-        // Start 5-minute scheduler
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.scheduler.scheduleAtFixedRate(
                 this::pushFiveMinuteUpdateToMeter,
@@ -80,7 +78,7 @@ public class House {
     }
 
     /* =========================
-       Setters (USER ACTIONS)
+       Setters
        ========================= */
 
     public synchronized void setCurrentConsumption(double consumptionKw) {
@@ -88,7 +86,6 @@ public class House {
             throw new IllegalArgumentException("Consumption cannot be negative");
 
         updateEnergyAccounting();
-
         this.currentConsumptionRate = consumptionKw;
         this.currentProductionRate = 0.0;
     }
@@ -98,57 +95,51 @@ public class House {
             throw new IllegalArgumentException("Production cannot be negative");
 
         updateEnergyAccounting();
-
         this.currentProductionRate = productionKw;
         this.currentConsumptionRate = 0.0;
     }
 
     /* =========================
-       Core Accounting Logic
+       Core Accounting
        ========================= */
 
     private synchronized void updateEnergyAccounting() {
         Instant now = Instant.now();
 
-        double deltaT1Hours =
+        double dt1 =
                 Duration.between(t1, now).toMillis() / 3_600_000.0;
-
-        double deltaT2Hours =
+        double dt2 =
                 Duration.between(t2, now).toMillis() / 3_600_000.0;
 
-        // Update totals
-        totalConsumption += currentConsumptionRate * deltaT1Hours;
-        totalProduction  += currentProductionRate  * deltaT1Hours;
+        totalConsumption += currentConsumptionRate * dt1;
+        totalProduction  += currentProductionRate  * dt1;
 
-        // Update 5-minute buckets
-        consumptionLast5Min += currentConsumptionRate * deltaT2Hours;
-        productionLast5Min  += currentProductionRate  * deltaT2Hours;
+        consumptionLast5Min += currentConsumptionRate * dt2;
+        productionLast5Min  += currentProductionRate  * dt2;
 
         t1 = now;
         t2 = now;
     }
 
     /* =========================
-       5-Minute Meter Push
+       5-minute Meter Push
        ========================= */
 
     private synchronized void pushFiveMinuteUpdateToMeter() {
         Instant now = Instant.now();
 
-        double deltaHours =
+        double dt =
                 Duration.between(t2, now).toMillis() / 3_600_000.0;
 
         double cons =
-                consumptionLast5Min + currentConsumptionRate * deltaHours;
-
+                consumptionLast5Min + currentConsumptionRate * dt;
         double prod =
-                productionLast5Min + currentProductionRate * deltaHours;
+                productionLast5Min + currentProductionRate * dt;
 
-        double avgConsumptionKw = cons / (FIVE_MINUTES_SECONDS / 3600.0);
-        double avgProductionKw  = prod / (FIVE_MINUTES_SECONDS / 3600.0);
+        double avgConsKw = cons / (FIVE_MINUTES_SECONDS / 3600.0);
+        double avgProdKw = prod / (FIVE_MINUTES_SECONDS / 3600.0);
 
-        // Expected method in Meter implementation
-        meter.update(avgConsumptionKw, avgProductionKw);
+        meter.update(avgConsKw, avgProdKw);
 
         consumptionLast5Min = 0.0;
         productionLast5Min = 0.0;
@@ -156,50 +147,70 @@ public class House {
     }
 
     /* =========================
-       Getters (WITH UPDATE)
+       Billing
        ========================= */
 
-    public synchronized double getTotalConsumption() {
+    public synchronized Bill generateBill(double sellingPricePerKwh) {
+        waitForNextFiveMinuteBoundary();
+
+        // Ensure all energy is accounted
         updateEnergyAccounting();
-        return totalConsumption;
+
+        double consumed = totalConsumption;
+        double sold = meter.getExportEnergy();
+        double amount = sold * sellingPricePerKwh;
+
+        // Reset EVERYTHING including 5-min window
+        resetAll();
+
+        return new Bill(consumed, sold, sellingPricePerKwh, amount);
     }
 
-    public synchronized double getTotalProduction() {
-        updateEnergyAccounting();
-        return totalProduction;
-    }
+    private void waitForNextFiveMinuteBoundary() {
+        long elapsed =
+                Duration.between(t2, Instant.now()).getSeconds();
 
-    public synchronized double getCurrentConsumptionRate() {
-        return currentConsumptionRate;
-    }
+        long remaining = FIVE_MINUTES_SECONDS - elapsed;
+        if (remaining <= 0) return;
 
-    public synchronized double getCurrentProductionRate() {
-        return currentProductionRate;
-    }
-
-    public synchronized double getConsumptionLast5Minutes() {
-        return consumptionLast5Min;
-    }
-
-    public synchronized double getProductionLast5Minutes() {
-        return productionLast5Min;
+        try {
+            TimeUnit.SECONDS.sleep(remaining + 1);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /* =========================
        Reset Logic
        ========================= */
 
-    public synchronized void resetTotals() {
-        totalConsumption = 0.0;
-        totalProduction = 0.0;
-        t1 = Instant.now();
+    private synchronized void resetAll() {
+        this.totalConsumption = 0.0;
+        this.totalProduction = 0.0;
+        this.consumptionLast5Min = 0.0;
+        this.productionLast5Min = 0.0;
+
+        Instant now = Instant.now();
+        this.t1 = now;
+        this.t2 = now;
     }
 
     /* =========================
-       Cleanup
+       Shutdown
        ========================= */
 
     public void shutdown() {
         scheduler.shutdownNow();
     }
+
+    /* =========================
+       Bill DTO
+       ========================= */
+
+    public static record Bill(
+            double totalConsumedKwh,
+            double totalSoldKwh,
+            double sellingPricePerKwh,
+            double totalAmount
+    ) {}
 }
