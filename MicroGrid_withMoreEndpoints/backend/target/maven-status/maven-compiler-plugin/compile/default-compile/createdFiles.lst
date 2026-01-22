@@ -1,0 +1,11 @@
+com\example\backend\controller\UserController.class
+com\example\backend\BackendApplication.class
+com\example\backend\dto\EnergyStatusDto.class
+com\example\backend\config\FirebaseConfig.class
+com\example\backend\dto\UpdatePriceRequestDto.class
+com\example\backend\dto\UserProfileDto.class
+com\example\backend\service\FirestoreService.class
+com\example\backend\controller\EnergyController.class
+com\example\backend\dto\GridPriceDto.class
+com\example\backend\service\FirebaseAuthService.class
+com\example\backend\dto\DashboardStatsDto.class

@@ -1,0 +1,11 @@
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\BackendApplication.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\config\FirebaseConfig.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\controller\EnergyController.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\controller\UserController.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\dto\DashboardStatsDto.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\dto\EnergyStatusDto.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\dto\GridPriceDto.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\dto\UpdatePriceRequestDto.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\dto\UserProfileDto.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\service\FirebaseAuthService.java
+C:\Users\abhir\Desktop\MicroGrid_withMoreEndpoints\backend\src\main\java\com\example\backend\service\FirestoreService.java
