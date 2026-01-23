@@ -36,19 +36,20 @@ public class MeterSimulator extends Meter
     private double exportEnergyKwh = 0.0;
 
     private final Instant startTimestamp;
-    private Instant simulatedTimestamp;
+    private volatile Instant simulatedTimestamp;
 
     public MeterSimulator(String meterId, double averageDemandKw, double peakSolarKw) throws IllegalArgumentException
     {
         super(meterId);
-        setAverageDemandKw(averageDemandKw);
+        setDemandKw(averageDemandKw);
         setPeakSolarKw(peakSolarKw);
 
         this.startTimestamp = Instant.now();
         this.simulatedTimestamp = startTimestamp;
     }
 
-    public void setAverageDemandKw(double averageDemandKw) throws IllegalArgumentException
+    @Override
+    public void setDemandKw(double averageDemandKw) throws IllegalArgumentException
     {
         if (averageDemandKw < 0)
             throw new IllegalArgumentException("Average demand must be >= 0");
@@ -142,7 +143,7 @@ public class MeterSimulator extends Meter
     }
 
     @Override
-    public Instant getReadingTimestamp()
+    public synchronized Instant getReadingTimestamp()
     {
         return simulatedTimestamp;
     }

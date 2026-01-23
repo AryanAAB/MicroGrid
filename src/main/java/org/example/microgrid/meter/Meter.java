@@ -11,9 +11,15 @@ public abstract class Meter
         this.meterId = meterId;
     }
 
+    public abstract void setDemandKw(double averageDemandKw) throws IllegalArgumentException;
+    public abstract void setPeakSolarKw(double peakSolarKw) throws IllegalArgumentException;
+
     public abstract void readEnergy();
+
     public abstract double getImportEnergy();
+
     public abstract double getExportEnergy();
+
     public abstract Instant getReadingTimestamp();
 
     public final String getMeterId()
@@ -26,5 +32,7 @@ public abstract class Meter
         return new MeterData(getImportEnergy(), getExportEnergy(), getReadingTimestamp().getEpochSecond());
     }
 
-    public static record MeterData(double demand, double supply, long timestamp) {}
+    public static record MeterData(double demand, double supply, long timestamp)
+    {
+    }
 }
