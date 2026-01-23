@@ -27,7 +27,7 @@ public class MeterTest
     public void testConstructorAndSetters()
     {
         // Valid constructor
-        MeterSimulator meter = new MeterSimulator("testMeter", 5.0, 3.0);
+        MeterSimulator meter = new MeterSimulator("testMeter", 0.5, 3.0);
         assertEquals(0.0, meter.getImportEnergy(), 0.001); // initially 0
         assertEquals(0.0, meter.getExportEnergy(), 0.001); // initially 0
 
@@ -36,21 +36,25 @@ public class MeterTest
         assertThrows(IllegalArgumentException.class, () -> new MeterSimulator("m2", 1, -1));
 
         // Setters
-        meter.setAverageDemandKw(7.0);
+        meter.setDemandKw(0.3);
         meter.setPeakSolarKw(4.0);
     }
 
     @Test
     public void testPowerAndEnergy()
     {
-        MeterSimulator meter = new MeterSimulator("sim1", 3, 5.0);
+        MeterSimulator meter = new MeterSimulator("sim1", 0.5, 2.0);
 
-        // Simulate 24 hours in steps
-        int steps = (int)(Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
+        // Simulate 48 hours in steps
+        int steps = (int) (2 * Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
         List<Double> importList = new ArrayList<>();
         List<Double> exportList = new ArrayList<>();
+        List<Double> demand = new ArrayList<>();
+        List<Double> solar = new ArrayList<>();
         List<Double> timeList = new ArrayList<>();
 
+        double totalDemand = 0.0;
+        double totalSolar = 0.0;
         Instant now = meter.getReadingTimestamp();
 
         for (int i = 0; i < steps; i++)
@@ -59,10 +63,17 @@ public class MeterTest
 
             double importPower = meter.getImportEnergy();
             double exportPower = meter.getExportEnergy();
+            double rawDemand = meter.getRawDemandEnergy();
+            double rawSolar = meter.getRawSolarEnergy();
             Instant time = meter.getReadingTimestamp();
 
+            totalDemand += rawDemand;
+            totalSolar += rawSolar;
             importList.add(importPower);
             exportList.add(exportPower);
+            demand.add(rawDemand);
+            solar.add(rawSolar);
+
             timeList.add(1.0 * Duration.between(now, time).toSeconds() / Constants.SEC_IN_HOUR);
         }
 
@@ -71,10 +82,11 @@ public class MeterTest
         assertTrue(meter.getExportEnergy() >= 0);
 
         // Plot the results
-        plotEnergyGraph(timeList, importList, exportList);
+        plotEnergyGraph(timeList, importList, exportList, demand, solar, totalDemand, totalSolar);
     }
 
-    private void plotEnergyGraph(List<Double> time, List<Double> importEnergy, List<Double> exportEnergy)
+    private void plotEnergyGraph(List<Double> time, List<Double> importEnergy, List<Double> exportEnergy,
+                                 List<Double> rawDemand, List<Double> rawSolar, double totalDemand, double totalSolar)
     {
         XYSeries importSeries = new XYSeries("Import Energy (kWh)");
         XYSeries exportSeries = new XYSeries("Export Energy (kWh)");
@@ -85,33 +97,64 @@ public class MeterTest
             exportSeries.add(time.get(i), exportEnergy.get(i));
         }
 
-        XYSeriesCollection dataset = new XYSeriesCollection();
-        dataset.addSeries(importSeries);
-        dataset.addSeries(exportSeries);
+        XYSeriesCollection dataset1 = new XYSeriesCollection();
+        dataset1.addSeries(importSeries);
+        dataset1.addSeries(exportSeries);
 
-        JFreeChart chart = ChartFactory.createXYLineChart(
+        JFreeChart chart1 = ChartFactory.createXYLineChart(
                 "Simulated Meter Energy",
                 "Time (hours)",
                 "Energy (kWh)",
-                dataset,
+                dataset1,
                 PlotOrientation.VERTICAL,
                 true, true, false
         );
 
-        XYPlot plot = chart.getXYPlot();
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        renderer.setSeriesPaint(0, Color.RED);
-        renderer.setSeriesStroke(0, new BasicStroke(2.0f));
-        renderer.setSeriesPaint(1, Color.BLUE);
-        renderer.setSeriesStroke(1, new BasicStroke(2.0f));
-        plot.setRenderer(renderer);
+        XYPlot plot = chart1.getXYPlot();
+        XYLineAndShapeRenderer renderer1 = new XYLineAndShapeRenderer();
+        renderer1.setSeriesPaint(0, Color.RED);
+        renderer1.setSeriesStroke(0, new BasicStroke(2.0f));
+        renderer1.setSeriesPaint(1, Color.BLUE);
+        renderer1.setSeriesStroke(1, new BasicStroke(2.0f));
+        plot.setRenderer(renderer1);
+
+        XYSeries demandSeries = new XYSeries("Raw Demand Energy (kWh), total = " + totalDemand);
+        XYSeries solarSeries = new XYSeries("Raw Solar Energy (kWh), total = " + totalSolar);
+        for (int i = 0; i < time.size(); i++)
+        {
+            demandSeries.add(time.get(i), rawDemand.get(i));
+            solarSeries.add(time.get(i), rawSolar.get(i));
+        }
+
+        XYSeriesCollection dataset2 = new XYSeriesCollection();
+        dataset2.addSeries(demandSeries);
+        dataset2.addSeries(solarSeries);
+
+        JFreeChart chart2 = ChartFactory.createXYLineChart(
+                "Raw Demand & Solar Energy",
+                "Time (hours)",
+                "Energy (kWh)",
+                dataset2,
+                PlotOrientation.VERTICAL,
+                true, true, false
+        );
+
+        XYPlot plot2 = chart2.getXYPlot();
+        XYLineAndShapeRenderer renderer2 = new XYLineAndShapeRenderer();
+        renderer2.setSeriesPaint(0, Color.MAGENTA);
+        renderer2.setSeriesStroke(0, new BasicStroke(2.0f));
+        renderer2.setSeriesPaint(1, Color.ORANGE);
+        renderer2.setSeriesStroke(1, new BasicStroke(2.0f));
+        plot2.setRenderer(renderer2);
 
         // Display chart in a window
         JFrame frame = new JFrame("Meter Simulator Graph");
 
         // Use DISPOSE so closing window does not kill JVM
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.add(new ChartPanel(chart));
+        frame.setLayout(new GridLayout(2, 1));
+        frame.add(new ChartPanel(chart1));
+        frame.add(new ChartPanel(chart2));
         frame.pack();
         frame.setVisible(true);
 

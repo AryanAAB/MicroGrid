@@ -34,9 +34,11 @@ public class MeterSimulator extends Meter
     //state variables
     private double importEnergyKwh = 0.0;
     private double exportEnergyKwh = 0.0;
+    private double rawDemandKwh = 0.0;
+    private double rawSolarKwh = 0.0;
 
     private final Instant startTimestamp;
-    private volatile Instant simulatedTimestamp;
+    private Instant simulatedTimestamp;
 
     public MeterSimulator(String meterId, double averageDemandKw, double peakSolarKw) throws IllegalArgumentException
     {
@@ -70,12 +72,18 @@ public class MeterSimulator extends Meter
     {
         double deltaHours = Constants.STEP_TO_SECONDS / Constants.SEC_IN_HOUR;
 
-        double importPower = demandPowerKw();
-        double exportPower = solarPowerKw();
-        double netPower = exportPower - importPower;
+        double demand = demandPowerKw();
+        double solar = solarPowerKw();
 
-        importEnergyKwh += netPower < 0 ? -netPower * deltaHours : 0;
-        exportEnergyKwh += netPower > 0 ? netPower * deltaHours : 0;
+        double selfConsumption = Math.min(demand, solar);
+        double importPower = demand - selfConsumption;
+        double exportPower = solar - selfConsumption;
+
+        importEnergyKwh += importPower * deltaHours;
+        exportEnergyKwh += exportPower * deltaHours;
+        rawDemandKwh = demand * deltaHours;
+        rawSolarKwh = solar * deltaHours;
+
         simulatedTimestamp = simulatedTimestamp.plusSeconds(
                 (long) Constants.STEP_TO_SECONDS
         );
@@ -140,6 +148,18 @@ public class MeterSimulator extends Meter
     public synchronized double getExportEnergy()
     {
         return exportEnergyKwh;
+    }
+
+    @Override
+    public synchronized double getRawDemandEnergy()
+    {
+        return rawDemandKwh;
+    }
+
+    @Override
+    public synchronized double getRawSolarEnergy()
+    {
+        return rawSolarKwh;
     }
 
     @Override

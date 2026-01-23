@@ -12,6 +12,7 @@ public abstract class Meter
     }
 
     public abstract void setDemandKw(double averageDemandKw) throws IllegalArgumentException;
+
     public abstract void setPeakSolarKw(double peakSolarKw) throws IllegalArgumentException;
 
     public abstract void readEnergy();
@@ -19,6 +20,10 @@ public abstract class Meter
     public abstract double getImportEnergy();
 
     public abstract double getExportEnergy();
+
+    public abstract double getRawDemandEnergy();
+
+    public abstract double getRawSolarEnergy();
 
     public abstract Instant getReadingTimestamp();
 
