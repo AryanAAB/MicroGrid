@@ -29,7 +29,7 @@ public class MeterSimulator extends Meter
 
     //user-configurable parameters
     private volatile double averageDemandKw;
-    private volatile double peakExportKw;
+    private volatile double peakSolarKw;
 
     //state variables
     private double importEnergyKwh = 0.0;
@@ -38,11 +38,11 @@ public class MeterSimulator extends Meter
     private final Instant startTimestamp;
     private Instant simulatedTimestamp;
 
-    public MeterSimulator(String meterId, double averageDemandKw, double peakExportKw) throws IllegalArgumentException
+    public MeterSimulator(String meterId, double averageDemandKw, double peakSolarKw) throws IllegalArgumentException
     {
         super(meterId);
         setAverageDemandKw(averageDemandKw);
-        setPeakExport(peakExportKw);
+        setPeakSolarKw(peakSolarKw);
 
         this.startTimestamp = Instant.now();
         this.simulatedTimestamp = startTimestamp;
@@ -56,12 +56,12 @@ public class MeterSimulator extends Meter
         this.averageDemandKw = averageDemandKw;
     }
 
-    public void setPeakExport(double peakExportKw) throws IllegalArgumentException
+    public void setPeakSolarKw(double peakSolarKw) throws IllegalArgumentException
     {
-        if (peakExportKw < 0)
-            throw new IllegalArgumentException("Peak export must be >= 0");
+        if (peakSolarKw < 0)
+            throw new IllegalArgumentException("Peak solar must be >= 0");
 
-        this.peakExportKw = peakExportKw;
+        this.peakSolarKw = peakSolarKw;
     }
 
     @Override
@@ -69,17 +69,18 @@ public class MeterSimulator extends Meter
     {
         double deltaHours = Constants.STEP_TO_SECONDS / Constants.SEC_IN_HOUR;
 
-        double importPower = importPowerKw();
-        double exportPower = exportPowerKw();
+        double importPower = demandPowerKw();
+        double exportPower = solarPowerKw();
+        double netPower = exportPower - importPower;
 
-        importEnergyKwh = importPower * deltaHours;
-        exportEnergyKwh = exportPower * deltaHours;
+        importEnergyKwh += netPower < 0 ? -netPower * deltaHours : 0;
+        exportEnergyKwh += netPower > 0 ? netPower * deltaHours : 0;
         simulatedTimestamp = simulatedTimestamp.plusSeconds(
                 (long) Constants.STEP_TO_SECONDS
         );
     }
 
-    private double importPowerKw()
+    private double demandPowerKw()
     {
         double t = fractionOfDay();
 
@@ -100,7 +101,7 @@ public class MeterSimulator extends Meter
         return Math.max(0.0, averageDemandKw * (1 + variation) + noise);
     }
 
-    private double exportPowerKw()
+    private double solarPowerKw()
     {
         double t = fractionOfDay();
 
@@ -110,13 +111,13 @@ public class MeterSimulator extends Meter
         double daylightT = (t - DAY_START) / (DAY_END - DAY_START);
         double solar = Math.sin(Math.PI * daylightT);
 
-        double supply = peakExportKw * Math.max(0.0, solar);
+        double supply = peakSolarKw * Math.max(0.0, solar);
 
         double noise =
-                peakExportKw * SOLAR_NOISE_FACTOR *
+                peakSolarKw * SOLAR_NOISE_FACTOR *
                         (random.nextDouble() - 0.5);
 
-        return Math.min(Math.max(0.0, supply + noise), peakExportKw);
+        return Math.min(Math.max(0.0, supply + noise), peakSolarKw);
     }
 
     private double fractionOfDay()

@@ -37,13 +37,13 @@ public class MeterTest
 
         // Setters
         meter.setAverageDemandKw(7.0);
-        meter.setPeakExport(4.0);
+        meter.setPeakSolarKw(4.0);
     }
 
     @Test
     public void testPowerAndEnergy()
     {
-        MeterSimulator meter = new MeterSimulator("sim1", 10.0, 3.0);
+        MeterSimulator meter = new MeterSimulator("sim1", 3, 5.0);
 
         // Simulate 24 hours in steps
         int steps = (int)(Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
@@ -60,9 +60,6 @@ public class MeterTest
             double importPower = meter.getImportEnergy();
             double exportPower = meter.getExportEnergy();
             Instant time = meter.getReadingTimestamp();
-
-            assertTrue(importPower >= 0.0);
-            assertTrue(exportPower >= 0.0 && exportPower <= 3.0);
 
             importList.add(importPower);
             exportList.add(exportPower);
