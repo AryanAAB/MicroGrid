@@ -1,5 +1,7 @@
 package org.example.microgrid.constants;
 
+import java.util.concurrent.TimeUnit;
+
 public final class Constants
 {
     private Constants() {}

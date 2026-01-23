@@ -1,6 +1,7 @@
-package org.example.microgrid.meter;
+package org.example.microgrid;
 
 import org.example.microgrid.constants.Constants;
+import org.example.microgrid.meter.MeterSimulator;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;

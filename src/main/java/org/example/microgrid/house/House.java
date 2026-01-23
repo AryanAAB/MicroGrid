@@ -1,6 +1,7 @@
 package org.example.microgrid.house;
 
 import org.example.microgrid.constants.Constants;
+import org.example.microgrid.meter.Meter;
 import org.example.microgrid.meter.MeterSimulator;
 
 import java.util.concurrent.Executors;
@@ -9,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 public class House
 {
-
     /* =========================
        Prices (currency / kWh)
        ========================= */
@@ -19,33 +19,23 @@ public class House
     /* =========================
        Meter
        ========================= */
-    private final MeterSimulator meter;
-
-    /* =========================
-       Scheduler
-       ========================= */
-    private final ScheduledExecutorService scheduler;
-    private volatile boolean started = false;
+    private final Meter meter;
 
     /* =========================
        Constructor
        ========================= */
     public House(
-            MeterSimulator meter,
+            String id,
             double initialProduction,
             double initialConsumption,
             double costPrice,
             double sellingPrice
     )
     {
-        this.meter = meter;
+        this.meter = new MeterSimulator(id, initialConsumption, initialProduction);
 
         setCostPrice(costPrice);
         setSellingPrice(sellingPrice);
-        setProduction(initialProduction);
-        setConsumption(initialConsumption);
-
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
     /* =========================
@@ -84,16 +74,6 @@ public class House
        Getters
        ========================= */
 
-    public double getExportEnergy()
-    {
-        return meter.getExportEnergy();
-    }
-
-    public double getImportEnergy()
-    {
-        return meter.getImportEnergy();
-    }
-
     public double getCostPrice()
     {
         return costPrice;
@@ -104,36 +84,13 @@ public class House
         return sellingPrice;
     }
 
-    public MeterSimulator getMeter()
+    public void step()
     {
-        return meter;
+        meter.readEnergy();
     }
 
-    /* =========================
-       Scheduler
-       ========================= */
-
-    public synchronized void start()
+    public Meter.MeterData getData()
     {
-        if (started)
-            return;
-
-        scheduler.scheduleAtFixedRate(
-                meter::readEnergy,
-                0,
-                Math.max(1, (long) Constants.STEP_TO_SECONDS),
-                TimeUnit.SECONDS
-        );
-
-        started = true;
-    }
-
-    public synchronized void shutdown()
-    {
-        if (!scheduler.isShutdown())
-        {
-            scheduler.shutdownNow();
-            started = false;
-        }
+        return meter.getMeterSnapshot();
     }
 }
