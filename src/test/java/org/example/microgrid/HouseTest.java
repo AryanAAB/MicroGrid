@@ -194,8 +194,7 @@ public class HouseTest
         try
         {
             latch.await();
-        }
-        catch (InterruptedException e)
+        } catch (InterruptedException e)
         {
             Thread.currentThread().interrupt();
         }
