@@ -2,7 +2,6 @@ package org.example.microgrid.meter;
 
 import org.example.microgrid.constants.Constants;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Random;
 
@@ -36,18 +35,13 @@ public class MeterSimulator extends Meter
     private double exportEnergyKwh = 0.0;
     private double rawDemandKwh = 0.0;
     private double rawSolarKwh = 0.0;
-
-    private final Instant startTimestamp;
-    private Instant simulatedTimestamp;
+    private Instant timestamp = null;
 
     public MeterSimulator(String meterId, double averageDemandKw, double peakSolarKw) throws IllegalArgumentException
     {
         super(meterId);
         setDemandKw(averageDemandKw);
         setPeakSolarKw(peakSolarKw);
-
-        this.startTimestamp = Instant.now();
-        this.simulatedTimestamp = startTimestamp;
     }
 
     @Override
@@ -68,12 +62,15 @@ public class MeterSimulator extends Meter
     }
 
     @Override
-    public synchronized void readEnergy()
+    public synchronized void readEnergy(Instant timestamp, double fractionOfDay)
     {
+        if (fractionOfDay < 0 || fractionOfDay > 1)
+            throw new IllegalArgumentException("fractionOfDay must be between 0 and 1");
+
         double deltaHours = Constants.STEP_TO_SECONDS / Constants.SEC_IN_HOUR;
 
-        double demand = demandPowerKw();
-        double solar = solarPowerKw();
+        double demand = demandPowerKw(fractionOfDay);
+        double solar = solarPowerKw(fractionOfDay);
 
         double selfConsumption = Math.min(demand, solar);
         double importPower = demand - selfConsumption;
@@ -84,15 +81,11 @@ public class MeterSimulator extends Meter
         rawDemandKwh = demand * deltaHours;
         rawSolarKwh = solar * deltaHours;
 
-        simulatedTimestamp = simulatedTimestamp.plusSeconds(
-                (long) Constants.STEP_TO_SECONDS
-        );
+        this.timestamp = timestamp;
     }
 
-    private double demandPowerKw()
+    private double demandPowerKw(double t)
     {
-        double t = fractionOfDay();
-
         double morningPeak =
                 Math.exp(-Math.pow(t - MORNING_PEAK_CENTER, 2) / PEAK_WIDTH);
 
@@ -110,10 +103,8 @@ public class MeterSimulator extends Meter
         return Math.max(0.0, averageDemandKw * (1 + variation) + noise);
     }
 
-    private double solarPowerKw()
+    private double solarPowerKw(double t)
     {
-        double t = fractionOfDay();
-
         if (t < DAY_START || t > DAY_END)
             return 0.0;
 
@@ -127,15 +118,6 @@ public class MeterSimulator extends Meter
                         (random.nextDouble() - 0.5);
 
         return Math.min(Math.max(0.0, supply + noise), peakSolarKw);
-    }
-
-    private double fractionOfDay()
-    {
-        double hours =
-                Duration.between(startTimestamp, simulatedTimestamp)
-                        .toSeconds() / Constants.SEC_IN_HOUR;
-
-        return (hours % Constants.HOUR_IN_DAY) / Constants.HOUR_IN_DAY;
     }
 
     @Override
@@ -163,8 +145,8 @@ public class MeterSimulator extends Meter
     }
 
     @Override
-    public synchronized Instant getReadingTimestamp()
+    public Instant getReadingTimestamp()
     {
-        return simulatedTimestamp;
+        return timestamp;
     }
 }

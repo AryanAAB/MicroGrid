@@ -1,31 +1,38 @@
 package org.example.microgrid.lan;
 
-import org.example.microgrid.house.House;
 import org.example.microgrid.grid.Grid;
+import org.example.microgrid.house.House;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class LAN {
-
-    private final List<House> houses = new ArrayList<>();
+public class LAN
+{
+    private final Map<String, House> houses = new HashMap<>();
     private final Grid grid;
 
-    public LAN(Grid grid) {
+    public LAN(Grid grid)
+    {
         this.grid = grid;
     }
 
-    public void addHouse(House house) {
-        houses.add(house);
+    public void addHouse(House house)
+    {
+        houses.put(house.getHouseId(), house);
     }
 
     // runs every 15 minutes
-    public void runMarketCycle() {
-
+    public void runMarketCycle()
+    {
         List<EnergySnapshot> sellers = new ArrayList<>();
         List<EnergySnapshot> buyers = new ArrayList<>();
 
-        for (House house : houses) {
+        for (Map.Entry<String, House> entry : houses.entrySet())
+        {
+            House house = entry.getValue();
 
             EnergySnapshot snapshot =
                     new EnergySnapshot(
@@ -38,20 +45,19 @@ public class LAN {
 
             if (snapshot.isSeller()) sellers.add(snapshot);
             if (snapshot.isBuyer()) buyers.add(snapshot);
+
+            house.resetIntervalStats();
         }
 
         TradePolicy.match(sellers, buyers, grid);
-
-        // reset interval stats after market
-        for (House house : houses) {
-            house.resetIntervalStats();
-        }
     }
 
-    // called once per day
-    public void resetDailyStats() {
-        for (House house : houses) {
-            house.resetDailyStats();
+    // runs every 1 minute
+    public void step(Instant timestamp, double fractionOfDay)
+    {
+        for(Map.Entry<String, House> entry : houses.entrySet())
+        {
+            entry.getValue().step(timestamp, fractionOfDay);
         }
     }
 }
