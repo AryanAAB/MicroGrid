@@ -11,7 +11,8 @@ import java.util.Map;
 
 public class LAN
 {
-    private final Map<String, House> houses = new HashMap<>();
+    private Map<String, House> houses = new HashMap<>();
+    private Map<String, Double> bills = new HashMap<>();
     private final Grid grid;
 
     public LAN(Grid grid)
@@ -23,7 +24,9 @@ public class LAN
     {
         houses.put(house.getHouseId(), house);
     }
-
+    public void addBill(String id, double amt) {
+        bills.put(id, amt + bills.get(id));
+    }
     // runs every 15 minutes
     public void runMarketCycle()
     {
@@ -49,7 +52,7 @@ public class LAN
             house.resetIntervalStats();
         }
 
-        TradePolicy.match(sellers, buyers, grid);
+        TradePolicy.match(this, sellers, buyers, grid);
     }
 
     // runs every 1 minute

@@ -68,4 +68,5 @@ public class EnergySnapshot
     {
         remainingConsumption = Math.max(0, remainingConsumption - units);
     }
+
 }

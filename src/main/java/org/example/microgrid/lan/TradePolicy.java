@@ -8,124 +8,95 @@ import java.util.List;
 public class TradePolicy
 {
     public static void match(
+            LAN lan,
             List<EnergySnapshot> sellers,
             List<EnergySnapshot> buyers,
             Grid grid
     )
     {
-        // Sellers: cheapest energy first
-        sellers.sort(Comparator.comparingDouble(EnergySnapshot::getSellingPrice));
+        sellers.sort(
+                Comparator.comparingDouble(EnergySnapshot::getSellingPrice)
+                        .thenComparing(
+                                Comparator.comparingDouble(EnergySnapshot::surplus).reversed()
+                        )
+        );
 
-        // Buyers: highest willingness-to-pay first
-        buyers.sort((a, b) -> Double.compare(b.getCostPrice(), a.getCostPrice()));
+        // Buyers: highest willingness-to-pay first followed by min deficit
+        buyers.sort(
+                Comparator.comparingDouble(EnergySnapshot::getCostPrice).reversed()
+                        .thenComparingDouble(EnergySnapshot::deficit)
+        );
 
         int bi = 0; // buyer pointer
         int si = 0; // seller pointer
+        int bj = 0, sj = 0;
+        double totalDemand = 0.0, totalSupply = 0.0, deltaBillBuyer = 0.0, deltaBillSeller = 0.0;
         while (bi < buyers.size() && si < sellers.size())
         {
+            // slide the windows
             EnergySnapshot lb = buyers.get(bi);   // leading buyer (highest price)
             EnergySnapshot ls = sellers.get(si);  // leading seller (lowest price)
 
-            // Stop clearing if prices no longer cross
-            if (lb.getCostPrice() < ls.getSellingPrice()) break;
-
-            // Group all buyers with the same cost in 1 window
-            int bj = bi;
-            double totalDemand = 0.0;
-
             while (bj < buyers.size()
-                    && buyers.get(bj).getCostPrice() == lb.getCostPrice())
-            {
-                // Only count buyers that still need energy
-                double d = buyers.get(bj).deficit();
-                if (d > 1e-9)
-                {
-                    totalDemand += d;
-                }
+                    && buyers.get(bj).getCostPrice() == lb.getCostPrice()
+                    && buyers.get(bj).deficit() == lb.deficit()) {
+                totalDemand += buyers.get(bj).deficit();
                 bj++;
             }
 
-            //Group all sellers with the SAME selling price
-            int sj = si;
-            double totalSupply = 0.0;
-
             while (sj < sellers.size()
-                    && sellers.get(sj).getSellingPrice() == ls.getSellingPrice())
-            {
-
-                // Only count sellers that still have surplus
-                double s = sellers.get(sj).surplus();
-                if (s > 1e-9)
-                {
-                    totalSupply += s;
-                }
+                    && sellers.get(sj).getSellingPrice() == ls.getSellingPrice()
+                    && sellers.get(sj).surplus() == ls.surplus()) {
+                totalSupply += sellers.get(sj).surplus();
                 sj++;
             }
+            // Stop clearing if prices no longer cross
+            if (lb.getCostPrice() < ls.getSellingPrice()) break;
 
-            // Nothing meaningful to trade in these windows
-            if (totalDemand <= 1e-9)
-            {
-                bi = bj;
-                continue;
+            double price = 0.5*(lb.getCostPrice() + ls.getSellingPrice());
+
+            if (totalDemand <= totalSupply) {
+                deltaBillBuyer += totalDemand*price;
+                deltaBillSeller -= totalDemand*price;
+                double len = bj-bi;
+                while (bi < bj) {
+                    lan.addBill(buyers.get(bi).getHouseId(), deltaBillBuyer/len);
+                    bi++;
+                }
+                deltaBillBuyer = 0;
+                totalSupply -= totalDemand;
+                totalDemand = 0;
             }
-            else if (totalSupply <= 1e-9)
-            {
-                si = sj;
-                continue;
+            else {
+                deltaBillSeller -= totalSupply*price;
+                deltaBillBuyer += totalSupply*price;
+                double len = sj-si;
+                while (si < sj) {
+                    lan.addBill(sellers.get(si).getHouseId(), deltaBillSeller/len);
+                    si++;
+                }
+                deltaBillSeller = 0;
+                totalDemand -= totalSupply;
+                totalSupply = 0;
             }
-
-            double traded = Math.min(totalDemand, totalSupply);
-
-            double remaining = traded;
-            for (int k = bi; k < bj && remaining > 1e-9; k++)
-            {
-                EnergySnapshot b = buyers.get(k);
-                double d = b.deficit();
-
-                if (d <= 1e-9) continue;
-
-                // Proportional share of this buyer in the price window
-                double share = (d / totalDemand) * traded;
-
-                // Cannot buy more than remaining deficit
-                double actual = Math.min(share, d);
-
-                b.buy(actual);
-                remaining -= actual;
-            }
-
-            remaining = traded;
-            for (int k = si; k < sj && remaining > 1e-9; k++)
-            {
-                EnergySnapshot s = sellers.get(k);
-                double sup = s.surplus();
-
-                if (sup <= 1e-9) continue;
-
-                // Proportional share of this seller in the price window
-                double share = (sup / totalSupply) * traded;
-
-                // Cannot sell more than remaining surplus
-                double actual = Math.min(share, sup);
-
-                s.sell(actual);
-                remaining -= actual;
-            }
-
-            //If buyers were fully satisfied, move to next buyer window
-            //Otherwise, move to next seller window
-            if (totalDemand <= totalSupply)
-                bi = bj;
-            else
-                si = sj;
         }
+        int len_buyers = bj - bi;
+        int len_sellers = sj-si;
 
+        while (bi < bj) {
+            lan.addBill(buyers.get(bi).getHouseId(), deltaBillBuyer/len_buyers + grid.buyFromGrid(totalDemand/len_buyers));
+            bi++;
+        }
+        while (si < sj) {
+            lan.addBill(sellers.get(si).getHouseId(), deltaBillSeller/len_sellers + grid.sellToGrid(totalSupply/len_sellers));
+            si++;
+        }
         for (int i = bi; i < buyers.size(); i++)
         {
             double d = buyers.get(i).deficit();
             if (d > 1e-9)
             {
-                grid.buyFromGrid(d);
+                lan.addBill(buyers.get(i).getHouseId(), grid.buyFromGrid(d));
             }
         }
 
@@ -134,7 +105,7 @@ public class TradePolicy
             double s = sellers.get(j).surplus();
             if (s > 1e-9)
             {
-                grid.sellToGrid(s);
+                lan.addBill(sellers.get(j).getHouseId(), grid.sellToGrid(s));
             }
         }
     }
