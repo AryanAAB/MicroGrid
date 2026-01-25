@@ -88,7 +88,9 @@ public class House
     {
         meter.readEnergy();
     }
-
+    public String getHouseId() {
+        return meter.getMeterId();
+    }
     public Meter.MeterData getData()
     {
         return meter.getMeterSnapshot();
