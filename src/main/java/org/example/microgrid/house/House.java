@@ -1,20 +1,26 @@
 package org.example.microgrid.house;
 
-import org.example.microgrid.constants.Constants;
 import org.example.microgrid.meter.Meter;
 import org.example.microgrid.meter.MeterSimulator;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+public class House {
 
-public class House
-{
+    /* =========================
+       Identity
+       ========================= */
+    private final String houseId;
+
     /* =========================
        Prices (currency / kWh)
        ========================= */
     private volatile double costPrice;
     private volatile double sellingPrice;
+
+    /* =========================
+       Daily stats
+       ========================= */
+    private double dailyConsumptionKwh = 0.0;
+    private double dailyProductionKwh = 0.0;
 
     /* =========================
        Meter
@@ -30,10 +36,9 @@ public class House
             double initialConsumption,
             double costPrice,
             double sellingPrice
-    )
-    {
+    ) {
+        this.houseId = id;
         this.meter = new MeterSimulator(id, initialConsumption, initialProduction);
-
         setCostPrice(costPrice);
         setSellingPrice(sellingPrice);
     }
@@ -41,56 +46,60 @@ public class House
     /* =========================
        Setters
        ========================= */
-
-    public void setProduction(double production)
-    {
-        if (production < 0)
-            throw new IllegalArgumentException("Production cannot be negative");
-
+    public void setProduction(double production) {
+        if (production < 0) throw new IllegalArgumentException("Production cannot be negative");
         meter.setPeakSolarKw(production);
     }
 
-    public void setConsumption(double consumption)
-    {
-        if (consumption < 0)
-            throw new IllegalArgumentException("Consumption cannot be negative");
-
+    public void setConsumption(double consumption) {
+        if (consumption < 0) throw new IllegalArgumentException();
         meter.setDemandKw(consumption);
     }
 
-    public void setCostPrice(double costPrice)
-    {
-        if (costPrice < 0) throw new IllegalArgumentException("CostPrice cannot be negative");
+    public void setCostPrice(double costPrice) {
+        if (costPrice < 0) throw new IllegalArgumentException();
         this.costPrice = costPrice;
     }
 
-    public void setSellingPrice(double sellingPrice)
-    {
-        if (sellingPrice < 0) throw new IllegalArgumentException("SellingPrice cannot be negative");
+    public void setSellingPrice(double sellingPrice) {
+        if (sellingPrice < 0) throw new IllegalArgumentException();
         this.sellingPrice = sellingPrice;
     }
 
     /* =========================
        Getters
        ========================= */
+    public String getHouseId() {
+        return houseId;
+    }
 
-    public double getCostPrice()
-    {
+    public double getCostPrice() {
         return costPrice;
     }
 
-    public double getSellingPrice()
-    {
+    public double getSellingPrice() {
         return sellingPrice;
     }
 
-    public void step()
-    {
-        meter.readEnergy();
+    public double getDailyConsumption() {
+        return dailyConsumptionKwh;
     }
 
-    public Meter.MeterData getData()
-    {
-        return meter.getMeterSnapshot();
+    public double getDailyProduction() {
+        return dailyProductionKwh;
+    }
+
+    /* =========================
+       Simulation step
+       ========================= */
+    public void step() {
+        meter.readEnergy();
+        dailyConsumptionKwh += meter.getRawDemandEnergy();
+        dailyProductionKwh += meter.getRawSolarEnergy();
+    }
+
+    public void resetDailyStats() {
+        dailyConsumptionKwh = 0.0;
+        dailyProductionKwh = 0.0;
     }
 }
