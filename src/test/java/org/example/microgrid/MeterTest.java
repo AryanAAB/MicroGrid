@@ -46,8 +46,8 @@ public class MeterTest
     {
         MeterSimulator meter = new MeterSimulator("sim1", 0.5, 2.0);
 
-        // Simulate 48 hours in steps
-        int steps = (int) (2 * Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
+        // Simulate 24 hours in steps
+        int steps = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
         List<Double> importList = new ArrayList<>();
         List<Double> exportList = new ArrayList<>();
         List<Double> demand = new ArrayList<>();
@@ -58,9 +58,9 @@ public class MeterTest
         double totalSolar = 0.0;
         Instant now = meter.getReadingTimestamp();
 
-        for (int i = 0; i < steps; i++)
+        for (int i = 0; i < 2 * steps; i++)
         {
-            meter.readEnergy();
+            meter.readEnergy(now, i % steps);
 
             double importPower = meter.getImportEnergy();
             double exportPower = meter.getExportEnergy();

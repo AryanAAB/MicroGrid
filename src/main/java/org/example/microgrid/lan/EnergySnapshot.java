@@ -1,10 +1,10 @@
 package org.example.microgrid.lan;
 
-public class EnergySnapshot {
-
-    public final String houseId;
-    public final double sellingPrice;
-    public final double costPrice;
+public class EnergySnapshot
+{
+    private final String houseId;
+    private final double sellingPrice;
+    private final double costPrice;
 
     private double remainingProduction;
     private double remainingConsumption;
@@ -15,7 +15,8 @@ public class EnergySnapshot {
             double consumption,
             double sellingPrice,
             double costPrice
-    ) {
+    )
+    {
         this.houseId = houseId;
         this.remainingProduction = production;
         this.remainingConsumption = consumption;
@@ -23,27 +24,48 @@ public class EnergySnapshot {
         this.costPrice = costPrice;
     }
 
-    public boolean isSeller() {
+    public String getHouseId()
+    {
+        return houseId;
+    }
+
+    public double getSellingPrice()
+    {
+        return sellingPrice;
+    }
+
+    public double getCostPrice()
+    {
+        return costPrice;
+    }
+
+    public boolean isSeller()
+    {
         return remainingProduction > remainingConsumption;
     }
 
-    public boolean isBuyer() {
+    public boolean isBuyer()
+    {
         return remainingConsumption > remainingProduction;
     }
 
-    public double surplus() {
+    public double surplus()
+    {
         return Math.max(0, remainingProduction - remainingConsumption);
     }
 
-    public double deficit() {
+    public double deficit()
+    {
         return Math.max(0, remainingConsumption - remainingProduction);
     }
 
-    public void sell(double units) {
+    public void sell(double units)
+    {
         remainingProduction = Math.max(0, remainingProduction - units);
     }
 
-    public void buy(double units) {
+    public void buy(double units)
+    {
         remainingConsumption = Math.max(0, remainingConsumption - units);
     }
 }
