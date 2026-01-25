@@ -1,53 +1,62 @@
 package org.example.microgrid.lan;
 
-import java.util.*;
+import org.example.microgrid.grid.Grid;
+import java.util.Comparator;
+import java.util.List;
 
 public class TradePolicy {
 
     public static void match(
             List<EnergySnapshot> sellers,
-            List<EnergySnapshot> buyers
+            List<EnergySnapshot> buyers,
+            Grid grid
     ) {
+
+        // cheapest sellers first
         sellers.sort(Comparator.comparingDouble(s -> s.sellingPrice));
-        buyers.sort(Comparator.comparingDouble(b -> b.costPrice));
+
+        // buyers who can pay more first
+        buyers.sort((a, b) -> Double.compare(b.costPrice, a.costPrice));
 
         for (EnergySnapshot buyer : buyers) {
 
-    while (buyer.deficit() > 0) {
+            while (buyer.deficit() > 0) {
 
-        boolean matched = false;
+                boolean matched = false;
 
-        for (EnergySnapshot seller : sellers) {
-            if (seller.surplus() <= 0) continue;
-            if (seller.sellingPrice > buyer.costPrice) continue;
+                for (EnergySnapshot seller : sellers) {
 
-            double tradeAmount =
-                    Math.min(seller.surplus(), buyer.deficit());
+                    if (seller.surplus() <= 0) continue;
+                    if (seller.sellingPrice > buyer.costPrice) continue;
 
-            seller.sell(tradeAmount);
-            buyer.buy(tradeAmount);
-            matched = true;
+                    double tradeAmount =
+                            Math.min(seller.surplus(), buyer.deficit());
 
-            System.out.println(
-                    "TRADE | Seller: " + seller.houseId +
-                    " -> Buyer: " + buyer.houseId +
-                    " | Units: " + tradeAmount +
-                    " | Price: " + seller.sellingPrice
-            );
+                    seller.sell(tradeAmount);
+                    buyer.buy(tradeAmount);
+                    matched = true;
 
-            break;
+                    System.out.println(
+                            "TRADE | Seller: " + seller.houseId +
+                            " -> Buyer: " + buyer.houseId +
+                            " | Units: " + tradeAmount +
+                            " | Price: " + seller.sellingPrice
+                    );
+                    break;
+                }
+
+                if (!matched) {
+                    double units = buyer.deficit();
+                    double cost = grid.buyFromGrid(units);
+
+                    System.out.println(
+                            "GRID USED | Buyer: " + buyer.houseId +
+                            " | Units: " + units +
+                            " | Cost: " + cost
+                    );
+                    break;
+                }
+            }
         }
-
-        if (!matched) {
-            System.out.println(
-                    "GRID USED | Buyer: " + buyer.houseId +
-                    " | Units: " + buyer.deficit()
-            );
-            break;
-        }
-    }
-}
-
-       
     }
 }

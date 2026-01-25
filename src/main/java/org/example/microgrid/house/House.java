@@ -5,31 +5,21 @@ import org.example.microgrid.meter.MeterSimulator;
 
 public class House {
 
-    /* =========================
-       Identity
-       ========================= */
     private final String houseId;
 
-    /* =========================
-       Prices (currency / kWh)
-       ========================= */
     private volatile double costPrice;
     private volatile double sellingPrice;
 
-    /* =========================
-       Daily stats
-       ========================= */
+    // daily stats
     private double dailyConsumptionKwh = 0.0;
     private double dailyProductionKwh = 0.0;
 
-    /* =========================
-       Meter
-       ========================= */
+    // interval stats (15 min)
+    private double intervalConsumptionKwh = 0.0;
+    private double intervalProductionKwh = 0.0;
+
     private final Meter meter;
 
-    /* =========================
-       Constructor
-       ========================= */
     public House(
             String id,
             double initialProduction,
@@ -43,11 +33,8 @@ public class House {
         setSellingPrice(sellingPrice);
     }
 
-    /* =========================
-       Setters
-       ========================= */
     public void setProduction(double production) {
-        if (production < 0) throw new IllegalArgumentException("Production cannot be negative");
+        if (production < 0) throw new IllegalArgumentException();
         meter.setPeakSolarKw(production);
     }
 
@@ -57,18 +44,15 @@ public class House {
     }
 
     public void setCostPrice(double costPrice) {
-        if (costPrice < 0) throw new IllegalArgumentException();
+        if (costPrice <= 0) throw new IllegalArgumentException();
         this.costPrice = costPrice;
     }
 
     public void setSellingPrice(double sellingPrice) {
-        if (sellingPrice < 0) throw new IllegalArgumentException();
+        if (sellingPrice <= 0) throw new IllegalArgumentException();
         this.sellingPrice = sellingPrice;
     }
 
-    /* =========================
-       Getters
-       ========================= */
     public String getHouseId() {
         return houseId;
     }
@@ -89,13 +73,30 @@ public class House {
         return dailyProductionKwh;
     }
 
-    /* =========================
-       Simulation step
-       ========================= */
+    public double getIntervalConsumption() {
+        return intervalConsumptionKwh;
+    }
+
+    public double getIntervalProduction() {
+        return intervalProductionKwh;
+    }
+
     public void step() {
         meter.readEnergy();
-        dailyConsumptionKwh += meter.getRawDemandEnergy();
-        dailyProductionKwh += meter.getRawSolarEnergy();
+
+        double demand = meter.getRawDemandEnergy();
+        double solar = meter.getRawSolarEnergy();
+
+        dailyConsumptionKwh += demand;
+        dailyProductionKwh += solar;
+
+        intervalConsumptionKwh += demand;
+        intervalProductionKwh += solar;
+    }
+
+    public void resetIntervalStats() {
+        intervalConsumptionKwh = 0.0;
+        intervalProductionKwh = 0.0;
     }
 
     public void resetDailyStats() {

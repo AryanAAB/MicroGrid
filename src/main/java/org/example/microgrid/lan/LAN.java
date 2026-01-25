@@ -1,6 +1,7 @@
 package org.example.microgrid.lan;
 
 import org.example.microgrid.house.House;
+import org.example.microgrid.grid.Grid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +9,18 @@ import java.util.List;
 public class LAN {
 
     private final List<House> houses = new ArrayList<>();
+    private final Grid grid;
+
+    public LAN(Grid grid) {
+        this.grid = grid;
+    }
 
     public void addHouse(House house) {
         houses.add(house);
     }
 
-    public void endOfDaySettlement() {
+    // runs every 15 minutes
+    public void runMarketCycle() {
 
         List<EnergySnapshot> sellers = new ArrayList<>();
         List<EnergySnapshot> buyers = new ArrayList<>();
@@ -23,8 +30,8 @@ public class LAN {
             EnergySnapshot snapshot =
                     new EnergySnapshot(
                             house.getHouseId(),
-                            house.getDailyProduction(),
-                            house.getDailyConsumption(),
+                            house.getIntervalProduction(),
+                            house.getIntervalConsumption(),
                             house.getSellingPrice(),
                             house.getCostPrice()
                     );
@@ -33,9 +40,16 @@ public class LAN {
             if (snapshot.isBuyer()) buyers.add(snapshot);
         }
 
-        TradePolicy.match(sellers, buyers);
+        TradePolicy.match(sellers, buyers, grid);
 
-        // reset AFTER settlement
+        // reset interval stats after market
+        for (House house : houses) {
+            house.resetIntervalStats();
+        }
+    }
+
+    // called once per day
+    public void resetDailyStats() {
         for (House house : houses) {
             house.resetDailyStats();
         }
