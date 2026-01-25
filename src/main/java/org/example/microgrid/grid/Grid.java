@@ -1,4 +1,4 @@
-package org.example.microgrid.grid;
+package org.example.microgrid.Grid;
 
 public class Grid {
     private final double gridBuyPrice;   // x
@@ -7,6 +7,14 @@ public class Grid {
     public Grid(double gridBuyPrice, double gridSellPrice) {
         this.gridBuyPrice = gridBuyPrice;
         this.gridSellPrice = gridSellPrice;
+    }
+
+    public double getGridBuyPrice() {
+        return this.gridBuyPrice;
+    }
+
+    public double getGridSellPrice() {
+        return gridSellPrice;
     }
 
     public double buyFromGrid(double units) {

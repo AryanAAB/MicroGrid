@@ -1,63 +1,47 @@
-package org.example.microgrid.lan;
+package org.example.microgrid.Lan;
 
-import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
+import org.example.microgrid.Grid.Grid;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class LAN
-{
-    private final Map<String, House> houses = new HashMap<>();
+public class LAN {
+
+    private final List<House> houses = new ArrayList<>();
+    private final Map<String, Double> bills = new HashMap<>();
     private final Grid grid;
 
-    public LAN(Grid grid)
-    {
+    private final TradePolicy tradePolicy = new TradePolicy();
+
+    public LAN(Grid grid) {
         this.grid = grid;
     }
 
-    public void addHouse(House house)
-    {
-        houses.put(house.getHouseId(), house);
+    public void addHouse(House house) {
+        houses.add(house);
+        bills.put(house.getHouseId(), 0.0);
+        tradePolicy.registerHouse(house);
     }
 
-    // runs every 15 minutes
-    public void runMarketCycle()
-    {
-        List<EnergySnapshot> sellers = new ArrayList<>();
-        List<EnergySnapshot> buyers = new ArrayList<>();
-
-        for (Map.Entry<String, House> entry : houses.entrySet())
-        {
-            House house = entry.getValue();
-
-            EnergySnapshot snapshot =
-                    new EnergySnapshot(
-                            house.getHouseId(),
-                            house.getIntervalProduction(),
-                            house.getIntervalConsumption(),
-                            house.getSellingPrice(),
-                            house.getCostPrice()
-                    );
-
-            if (snapshot.isSeller()) sellers.add(snapshot);
-            if (snapshot.isBuyer()) buyers.add(snapshot);
-
-            house.resetIntervalStats();
-        }
-
-        TradePolicy.match(sellers, buyers, grid);
+    public void runMarketCycle() {
+        tradePolicy.runMarketCycle(this);
     }
 
-    // runs every 1 minute
-    public void step(Instant timestamp, double fractionOfDay)
-    {
-        for(Map.Entry<String, House> entry : houses.entrySet())
-        {
-            entry.getValue().step(timestamp, fractionOfDay);
-        }
+    /* accessors used by TradePolicy */
+
+    public List<House> getHouses() {
+        return houses;
+    }
+
+    public Grid getGrid() {
+        return grid;
+    }
+
+    public void addBill(String houseId, double delta) {
+        bills.put(houseId, bills.get(houseId) + delta);
+    }
+
+    public double getBill(String houseId) {
+        return bills.get(houseId);
     }
 }

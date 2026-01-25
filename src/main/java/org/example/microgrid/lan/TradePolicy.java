@@ -13,7 +13,6 @@ public class TradePolicy
             Grid grid
     )
     {
-
         // cheapest sellers first
         sellers.sort(Comparator.comparingDouble(EnergySnapshot::getSellingPrice));
 
