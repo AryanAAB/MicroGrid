@@ -96,7 +96,7 @@ public class TradePolicy
             double d = buyers.get(i).deficit();
             if (d > 1e-9)
             {
-                lan.addBill(buyers.get(i).getHouseId(), grid.buyFromGrid(d));
+                lan.addResidualDemand(buyers.get(i).getHouseId(), d);
             }
         }
 
@@ -105,7 +105,7 @@ public class TradePolicy
             double s = sellers.get(j).surplus();
             if (s > 1e-9)
             {
-                lan.addBill(sellers.get(j).getHouseId(), grid.sellToGrid(s));
+                lan.addResidualSupply(sellers.get(j).getHouseId(), s);
             }
         }
     }
