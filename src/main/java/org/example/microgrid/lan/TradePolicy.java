@@ -8,6 +8,8 @@ public class TradePolicy
 {
     private static final double EPS = 1e-9;
 
+    private TradePolicy() {}
+
     public static void match(
             LAN lan,
             List<EnergySnapshot> sellers,
@@ -79,10 +81,16 @@ public class TradePolicy
 
         // settle remaining window demand/supply with grid
         if (bi < bj && totalDemand > EPS)
+        {
             settleGridImport(lan, buyers, bi, bj, totalDemand);
+            bi = bj;
+        }
 
         if (si < sj && totalSupply > EPS)
+        {
             settleGridExport(lan, sellers, si, sj, totalSupply);
+            si = sj;
+        }
 
         for (int i = bi; i < buyers.size(); i++)
         {

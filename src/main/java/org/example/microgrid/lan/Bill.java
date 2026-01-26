@@ -35,6 +35,16 @@ public class Bill
         gridExported += energy;
     }
 
+    public double getGridImported()
+    {
+        return gridImported;
+    }
+
+    public double getGridExported()
+    {
+        return gridExported;
+    }
+
     // ---------- Costs ----------
     public double getP2PCost()
     {
