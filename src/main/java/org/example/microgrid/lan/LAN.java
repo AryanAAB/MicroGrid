@@ -51,18 +51,40 @@ public class LAN
         TradePolicy.match(this, sellers, buyers);
     }
 
-    private static EnergySnapshot getEnergySnapshot(House house)
+    private EnergySnapshot getEnergySnapshot(House house)
     {
         double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
         double consumption = house.getIntervalConsumption();
 
+        double surplus = 0.0, deficit = 0.0;
+
+        if(production >= consumption)
+        {
+            getBill(house.getHouseId()).addGridImport(consumption);
+            getBill(house.getHouseId()).addGridExport(consumption);
+
+            surplus = production - consumption;
+        }
+        else
+        {
+            getBill(house.getHouseId()).addGridImport(production);
+            getBill(house.getHouseId()).addGridExport(production);
+
+            deficit = consumption - production;
+        }
+
         return new EnergySnapshot(
                 house.getHouseId(),
-                production,
-                consumption,
+                surplus,
+                deficit,
                 house.getSellingPrice(),
                 house.getCostPrice()
         );
+    }
+
+    public Grid getGrid()
+    {
+        return this.grid;
     }
 
     // runs every 1 minute

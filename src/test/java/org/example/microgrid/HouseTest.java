@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,20 +29,21 @@ public class HouseTest
                 "H1",
                 3.0,
                 2.0,
+                1.0,
                 8.0,
                 6.0
         );
 
         assertEquals(8.0, house.getCostPrice());
         assertEquals(6.0, house.getSellingPrice());
-        assertEquals(0.0, house.getData().demand());
-        assertEquals(0.0, house.getData().supply());
+        assertEquals(0.0, house.getIntervalConsumption());
+        assertEquals(0.0, house.getIntervalProduction());
     }
 
     @Test
     public void rejectNegativeValues()
     {
-        House house = new House("H2", 2.0, 2.0, 5.0, 4.0);
+        House house = new House("H2", 2.0, 2.0, 1.0, 5.0, 4.0);
 
         assertThrows(IllegalArgumentException.class,
                 () -> house.setPeakSolarKw(-1.0));
@@ -57,58 +59,21 @@ public class HouseTest
     }
 
     @Test
-    public void makesEnergyCumulative()
-    {
-        House house = new House(
-                "H3",
-                4.0,   // production
-                2.0,   // consumption
-                6.0,
-                4.0
-        );
-
-        double prevImport = 0.0;
-        double prevExport = 0.0;
-
-        for (int i = 0; i < 20; i++)
-        {
-            house.step();
-
-            Meter.MeterData data = house.getData();
-
-            double currImport = data.demand();
-            double currExport = data.supply();
-
-            assertTrue(currImport >= prevImport,
-                    "Import energy must never decrease");
-
-            assertTrue(currExport >= prevExport,
-                    "Export energy must never decrease");
-
-            prevImport = currImport;
-            prevExport = currExport;
-        }
-    }
-
-    @Test
     public void meterSnapshotIsNonNullAndHasValidTimestamp()
     {
         House house = new House(
                 "H6",
                 3.0,
                 3.0,
+                1.0,
                 5.0,
                 5.0
         );
 
-        house.step();
+        house.step(Instant.now(), 0);
 
-        Meter.MeterData data = house.getData();
-
-        assertNotNull(data);
-        assertTrue(data.demand() >= 0);
-        assertTrue(data.supply() >= 0);
-        assertTrue(data.timestamp() > 0);
+        assertTrue(house.getIntervalConsumption() >= 0);
+        assertTrue(house.getIntervalProduction() >= 0);
     }
 
     @Test
@@ -116,35 +81,45 @@ public class HouseTest
     {
         House house = new House(
                 "H-PLOT",
-                2,
+                2.0,
                 0.5,
-                7.0,
-                5.0
+                0.2,
+                5.0,
+                6.0
         );
 
-        // Simulate 48 hours in steps
-        int steps = (int) (2 * Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS); // 1-min steps
+        // 48 hours, 1-minute steps
+        int steps = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS);
 
         XYSeries netEnergySeries = new XYSeries("Net Energy (Export - Import)");
 
-        long startTimestamp = -1;
+        Instant start = Instant.now();
+        Instant current = start;
 
-        for (int i = 0; i < steps; i++)
+        double fractionOfDay =
+                Constants.STEP_TO_SECONDS / (double) Constants.SEC_IN_DAY;
+
+        for (int i = 0; i < 2 * steps; i++)
         {
-            house.step();
-
-            Meter.MeterData data = house.getData();
-
-            if (startTimestamp < 0)
-                startTimestamp = data.timestamp();
+            house.step(current, (i % steps) * fractionOfDay);
 
             double hours =
-                    (data.timestamp() - startTimestamp)
+                    (double) (current.getEpochSecond() - start.getEpochSecond())
                             / Constants.SEC_IN_HOUR;
 
-            double netEnergy = data.supply() - data.demand();
+            double netEnergy =
+                    house.getIntervalProduction()
+                            - house.getIntervalConsumption();
 
             netEnergySeries.add(hours, netEnergy);
+
+            // reset every 15-minute interval
+            if ((i + 1) % (15 * 60 / Constants.STEP_TO_SECONDS) == 0)
+            {
+                house.resetIntervalStats();
+            }
+
+            current = current.plusSeconds((long)(Constants.STEP_TO_SECONDS));
         }
 
         plotNetEnergy(netEnergySeries);
