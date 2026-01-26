@@ -43,7 +43,7 @@ public class LANTest
         // Steps per day (1-minute step)
         int stepsPerDay = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS);
 
-        double fractionOfDay = Constants.STEP_TO_SECONDS / (double) Constants.SEC_IN_DAY;
+        double fractionOfDay = Constants.STEP_TO_SECONDS / Constants.SEC_IN_DAY;
 
         // Loop over one day
         for (int i = 0; i <= stepsPerDay; i++)
