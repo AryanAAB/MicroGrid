@@ -5,15 +5,13 @@ import org.example.microgrid.meter.MeterSimulator;
 
 import java.time.Instant;
 
-public class House
-{
+public class House {
     private final String houseId;
 
     private volatile double costPrice;
     private volatile double sellingPrice;
     private volatile double sellThreshold;
 
-    // interval stats (15 min)
     private double intervalConsumptionKwh = 0.0;
     private double intervalProductionKwh = 0.0;
 
@@ -26,88 +24,57 @@ public class House
             double sellThreshold,
             double costPrice,
             double sellingPrice
-    )
-    {
+    ) {
         this.houseId = id;
+        // Ensure the meter is initialized first
         this.meter = new MeterSimulator(id, initialConsumption, initialProduction);
+        
+        // Use the setters to benefit from the validation logic
         setCostPrice(costPrice);
         setSellingPrice(sellingPrice);
         setThreshold(sellThreshold);
-    }
+    } // Removed the extra closing brace that was here
 
-    public void setPeakSolarKw(double production)
-    {
-        if (production < 0) throw new IllegalArgumentException("Production cannot be less than 0.");
+    public void setPeakSolarKw(double production) {
+        if (production < 0) throw new IllegalArgumentException("Production cannot be negative");
         meter.setPeakSolarKw(production);
     }
 
-    public void setConsumption(double consumption)
-    {
-        if (consumption < 0) throw new IllegalArgumentException("Consumption cannot be less than 0.");
+    public void setConsumption(double consumption) {
+        if (consumption < 0) throw new IllegalArgumentException("Consumption cannot be negative");
         meter.setDemandKw(consumption);
     }
 
-    public void setThreshold(double threshold)
-    {
-        if (threshold < 0) throw new IllegalArgumentException("Threshold cannot be less than 0.");
+    public void setThreshold(double threshold) {
+        if (threshold < 0) throw new IllegalArgumentException("Threshold cannot be negative");
         this.sellThreshold = threshold;
     }
 
-    public void setCostPrice(double costPrice)
-    {
-        if (costPrice <= 0) throw new IllegalArgumentException("CostPrice cannot be less than 0.");
+    public void setCostPrice(double costPrice) {
+        if (costPrice <= 0) throw new IllegalArgumentException("Cost price must be positive");
         this.costPrice = costPrice;
     }
 
-    public void setSellingPrice(double sellingPrice)
-    {
-        if (sellingPrice <= 0) throw new IllegalArgumentException("SellingPrice cannot be less than 0.");
+    public void setSellingPrice(double sellingPrice) {
+        if (sellingPrice <= 0) throw new IllegalArgumentException("Selling price must be positive");
         this.sellingPrice = sellingPrice;
     }
 
-    public String getHouseId()
-    {
-        return houseId;
-    }
+    public String getHouseId() { return houseId; }
+    public double getCostPrice() { return costPrice; }
+    public double getSellingPrice() { return sellingPrice; }
+    public double getIntervalConsumption() { return intervalConsumptionKwh; }
+    public double getIntervalProduction() { return intervalProductionKwh; }
+    public double getSellThreshold() { return sellThreshold; }
+    public String getMeterId() { return meter.getMeterId(); }
 
-    public double getCostPrice()
-    {
-        return costPrice;
-    }
-
-    public double getSellingPrice()
-    {
-        return sellingPrice;
-    }
-
-    public double getIntervalConsumption()
-    {
-        return intervalConsumptionKwh;
-    }
-
-    public double getIntervalProduction()
-    {
-        return intervalProductionKwh;
-    }
-
-    public double getSellThreshold()
-    {
-        return sellThreshold;
-    }
-
-    public void step(Instant timestamp, double fractionOfDay)
-    {
+    public void step(Instant timestamp, double fractionOfDay) {
         meter.readEnergy(timestamp, fractionOfDay);
-
-        double demand = meter.getRawDemandEnergy();
-        double solar = meter.getRawSolarEnergy();
-
-        intervalConsumptionKwh += demand;
-        intervalProductionKwh += solar;
+        intervalConsumptionKwh += meter.getRawDemandEnergy();
+        intervalProductionKwh += meter.getRawSolarEnergy();
     }
 
-    public void resetIntervalStats()
-    {
+    public void resetIntervalStats() {
         intervalConsumptionKwh = 0.0;
         intervalProductionKwh = 0.0;
     }

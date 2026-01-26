@@ -2,76 +2,50 @@ package org.example.microgrid.lan;
 
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
-
 import java.time.Instant;
 import java.util.*;
 
-public class LAN
-{
+public class LAN {
     private final Map<String, House> houses = new HashMap<>();
     private final Map<String, Bill> bills = new HashMap<>();
     private final Grid grid;
 
-    public LAN(Grid grid)
-    {
+    // Location-based fields removed
+    public LAN(Grid grid) {
         this.grid = grid;
     }
 
-    public void addHouse(House house)
-    {
+    public void addHouse(House house) {
         houses.put(house.getHouseId(), house);
         bills.put(house.getHouseId(), new Bill());
     }
 
-    public Bill getBill(String houseId)
-    {
-        return bills.get(houseId);
-    }
-
-    // runs every 15 minutes
-    public void runMarketCycle()
-    {
+    public void runMarketCycle() {
         List<EnergySnapshot> sellers = new ArrayList<>();
         List<EnergySnapshot> buyers = new ArrayList<>();
 
-        for (Map.Entry<String, House> entry : houses.entrySet())
-        {
-            House house = entry.getValue();
-
-            EnergySnapshot snapshot = getEnergySnapshot(house);
-
+        for (House house : houses.values()) {
+            EnergySnapshot snapshot = createSnapshot(house);
             if (snapshot.isSeller()) sellers.add(snapshot);
-            if (snapshot.isBuyer()) buyers.add(snapshot);
-
+            else if (snapshot.isBuyer()) buyers.add(snapshot);
+            
             house.resetIntervalStats();
         }
 
         TradePolicy.match(this, sellers, buyers);
     }
 
-    private EnergySnapshot getEnergySnapshot(House house)
-    {
-        getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
-
-        double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
+    private EnergySnapshot createSnapshot(House house) {
+        Bill bill = getBill(house.getHouseId());
+        double production = house.getIntervalProduction();
         double consumption = house.getIntervalConsumption();
 
-        double surplus = 0.0, deficit = 0.0;
+        double surplus = Math.max(0, production - consumption);
+        double deficit = Math.max(0, consumption - production);
 
-        if(production >= consumption)
-        {
-            getBill(house.getHouseId()).addGridImport(consumption);
-            getBill(house.getHouseId()).addGridExport(consumption);
-
-            surplus = production - consumption;
-        }
-        else
-        {
-            getBill(house.getHouseId()).addGridImport(production);
-            getBill(house.getHouseId()).addGridExport(production);
-
-            deficit = consumption - production;
-        }
+        double gridExport = Math.min(surplus, house.getSellThreshold());
+        bill.addGridExport(gridExport);
+        surplus -= gridExport;
 
         return new EnergySnapshot(
                 house.getHouseId(),
@@ -82,29 +56,11 @@ public class LAN
         );
     }
 
-    public Grid getGrid()
-    {
-        return this.grid;
+    public void step(Instant timestamp, double fractionOfDay) {
+        houses.values().forEach(h -> h.step(timestamp, fractionOfDay));
     }
 
-    // runs every 1 minute
-    public void step(Instant timestamp, double fractionOfDay)
-    {
-        for (Map.Entry<String, House> entry : houses.entrySet())
-        {
-            entry.getValue().step(timestamp, fractionOfDay);
-        }
-    }
-
-    // call every 1 month
-    public Map<String, Bill> getBills()
-    {
-        return Collections.unmodifiableMap(bills);
-    }
-
-    // call every 1 month
-    public void clearBills()
-    {
-        bills.values().forEach(Bill::clear);
-    }
+    public Bill getBill(String houseId) { return bills.get(houseId); }
+    public Grid getGrid() { return grid; }
+    public void resetDailyStats() { bills.values().forEach(Bill::clear); }
 }
