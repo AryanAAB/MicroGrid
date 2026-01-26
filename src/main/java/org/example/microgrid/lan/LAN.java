@@ -66,16 +66,30 @@ public class LAN
 
         double surplus = 0.0, deficit = 0.0;
 
-        // If production is more, then import the entire consumption from grid
-        // and export the entire consumption and previous consumption to grid
-        if (production >= consumption + prevConsumption)
+        // the previous consumption is met by current production
+        if(production >= prevConsumption)
+        {
+            getBill(house.getHouseId()).addGridExport(prevConsumption);
+
+            production -= prevConsumption;
+        }
+        //otherwise the entire production goes into net metering
+        else
+        {
+            getBill(house.getHouseId()).addGridExport(production);
+
+            production = 0;
+        }
+
+        // production satisfies current consumption so consume and export from grid
+        if(production >= consumption)
         {
             getBill(house.getHouseId()).addGridImport(consumption);
-            getBill(house.getHouseId()).addGridExport(consumption + prevConsumption);
+            getBill(house.getHouseId()).addGridExport(consumption);
 
-            surplus = production - consumption - prevConsumption;
+            surplus = production - consumption;
         }
-        // otherwise import and export the production value
+        // otherwise the entire production goes into net metering
         else
         {
             getBill(house.getHouseId()).addGridImport(production);
