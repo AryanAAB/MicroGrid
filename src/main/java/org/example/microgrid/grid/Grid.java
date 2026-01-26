@@ -1,19 +1,23 @@
 package org.example.microgrid.grid;
 
-public class Grid {
-    private final double gridBuyPrice;   // x
-    private final double gridSellPrice;  // y
+public class Grid
+{
+    private final double buyPrice;
+    private final double sellPrice;
 
-    public Grid(double gridBuyPrice, double gridSellPrice) {
-        this.gridBuyPrice = gridBuyPrice;
-        this.gridSellPrice = gridSellPrice;
+    public Grid(double buyPrice, double sellPrice)
+    {
+        this.buyPrice = buyPrice;
+        this.sellPrice = sellPrice;
     }
 
-    public double buyFromGrid(double units) {
-        return units * gridBuyPrice;
+    public double getBuyPrice()
+    {
+        return buyPrice;
     }
 
-    public double sellToGrid(double units) {
-        return units * gridSellPrice;
+    public double getSellPrice()
+    {
+        return sellPrice;
     }
 }

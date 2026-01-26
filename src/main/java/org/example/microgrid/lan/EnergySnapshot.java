@@ -3,23 +3,22 @@ package org.example.microgrid.lan;
 public class EnergySnapshot
 {
     private final String houseId;
-    private final double sellingPrice;
-    private final double costPrice;
-
-    private double remainingProduction;
-    private double remainingConsumption;
+    private final double surplus;      // kWh
+    private final double deficit;      // kWh
+    private final double sellingPrice; // ₹/kWh
+    private final double costPrice;    // ₹/kWh
 
     public EnergySnapshot(
             String houseId,
-            double production,
-            double consumption,
+            double surplus,
+            double deficit,
             double sellingPrice,
             double costPrice
     )
     {
         this.houseId = houseId;
-        this.remainingProduction = production;
-        this.remainingConsumption = consumption;
+        this.surplus = surplus;
+        this.deficit = deficit;
         this.sellingPrice = sellingPrice;
         this.costPrice = costPrice;
     }
@@ -27,6 +26,16 @@ public class EnergySnapshot
     public String getHouseId()
     {
         return houseId;
+    }
+
+    public double surplus()
+    {
+        return surplus;
+    }
+
+    public double deficit()
+    {
+        return deficit;
     }
 
     public double getSellingPrice()
@@ -41,32 +50,11 @@ public class EnergySnapshot
 
     public boolean isSeller()
     {
-        return remainingProduction > remainingConsumption;
+        return surplus >= deficit;
     }
 
     public boolean isBuyer()
     {
-        return remainingConsumption > remainingProduction;
+        return !isSeller();
     }
-
-    public double surplus()
-    {
-        return Math.max(0, remainingProduction - remainingConsumption);
-    }
-
-    public double deficit()
-    {
-        return Math.max(0, remainingConsumption - remainingProduction);
-    }
-
-    public void sell(double units)
-    {
-        remainingProduction = Math.max(0, remainingProduction - units);
-    }
-
-    public void buy(double units)
-    {
-        remainingConsumption = Math.max(0, remainingConsumption - units);
-    }
-
 }

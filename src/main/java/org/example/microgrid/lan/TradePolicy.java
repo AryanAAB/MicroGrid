@@ -4,16 +4,19 @@ import org.example.microgrid.grid.Grid;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class TradePolicy
 {
+    private static final double EPS = 1e-9;
+
     public static void match(
             LAN lan,
             List<EnergySnapshot> sellers,
-            List<EnergySnapshot> buyers,
-            Grid grid
+            List<EnergySnapshot> buyers
     )
     {
+        // Sellers: Lowest Selling price first followed by max surplus
         sellers.sort(
                 Comparator.comparingDouble(EnergySnapshot::getSellingPrice)
                         .thenComparing(
@@ -30,7 +33,8 @@ public class TradePolicy
         int bi = 0; // buyer pointer
         int si = 0; // seller pointer
         int bj = 0, sj = 0;
-        double totalDemand = 0.0, totalSupply = 0.0, deltaBillBuyer = 0.0, deltaBillSeller = 0.0;
+        double totalDemand = 0.0, totalSupply = 0.0;
+
         while (bi < buyers.size() && si < sellers.size())
         {
             // slide the windows
@@ -38,75 +42,116 @@ public class TradePolicy
             EnergySnapshot ls = sellers.get(si);  // leading seller (lowest price)
 
             while (bj < buyers.size()
-                    && buyers.get(bj).getCostPrice() == lb.getCostPrice()
-                    && buyers.get(bj).deficit() == lb.deficit()) {
+                    && equals(buyers.get(bj).getCostPrice(), lb.getCostPrice())
+                    && equals(buyers.get(bj).deficit(), lb.deficit()))
+            {
                 totalDemand += buyers.get(bj).deficit();
                 bj++;
             }
 
             while (sj < sellers.size()
-                    && sellers.get(sj).getSellingPrice() == ls.getSellingPrice()
-                    && sellers.get(sj).surplus() == ls.surplus()) {
+                    && equals(sellers.get(sj).getSellingPrice(), ls.getSellingPrice())
+                    && equals(sellers.get(sj).surplus(), ls.surplus()))
+            {
                 totalSupply += sellers.get(sj).surplus();
                 sj++;
             }
             // Stop clearing if prices no longer cross
-            if (lb.getCostPrice() < ls.getSellingPrice()) break;
+            if (lb.getCostPrice() + EPS < ls.getSellingPrice()) break;
 
-            double price = 0.5*(lb.getCostPrice() + ls.getSellingPrice());
+            double price = 0.5 * (lb.getCostPrice() + ls.getSellingPrice());
+            double traded = Math.min(totalDemand, totalSupply);
 
-            if (totalDemand <= totalSupply) {
-                deltaBillBuyer += totalDemand*price;
-                deltaBillSeller -= totalDemand*price;
-                double len = bj-bi;
-                while (bi < bj) {
-                    lan.addBill(buyers.get(bi).getHouseId(), deltaBillBuyer/len);
-                    bi++;
-                }
-                deltaBillBuyer = 0;
-                totalSupply -= totalDemand;
-                totalDemand = 0;
-            }
-            else {
-                deltaBillSeller -= totalSupply*price;
-                deltaBillBuyer += totalSupply*price;
-                double len = sj-si;
-                while (si < sj) {
-                    lan.addBill(sellers.get(si).getHouseId(), deltaBillSeller/len);
-                    si++;
-                }
-                deltaBillSeller = 0;
-                totalDemand -= totalSupply;
-                totalSupply = 0;
-            }
-        }
-        int len_buyers = bj - bi;
-        int len_sellers = sj-si;
+            int buyerCount = bj - bi;
+            int sellerCount = sj - si;
 
-        while (bi < bj) {
-            lan.addBill(buyers.get(bi).getHouseId(), deltaBillBuyer/len_buyers + grid.buyFromGrid(totalDemand/len_buyers));
-            bi++;
+            if (buyerCount == 0 || sellerCount == 0)
+                break;
+
+            // allocate P2P trades
+            applyP2PBuy(lan, buyers, bi, bj, traded / buyerCount, price);
+            applyP2PSell(lan, sellers, si, sj, traded / sellerCount, price);
+
+            totalDemand -= traded;
+            totalSupply -= traded;
+
+            if (totalDemand <= EPS) bi = bj;
+            if (totalSupply <= EPS) si = sj;
         }
-        while (si < sj) {
-            lan.addBill(sellers.get(si).getHouseId(), deltaBillSeller/len_sellers + grid.sellToGrid(totalSupply/len_sellers));
-            si++;
-        }
+
+        // settle remaining window demand/supply with grid
+        if (bi < bj && totalDemand > EPS)
+            settleGridImport(lan, buyers, bi, bj, totalDemand);
+
+        if (si < sj && totalSupply > EPS)
+            settleGridExport(lan, sellers, si, sj, totalSupply);
+
         for (int i = bi; i < buyers.size(); i++)
         {
             double d = buyers.get(i).deficit();
-            if (d > 1e-9)
-            {
-                lan.addResidualDemand(buyers.get(i).getHouseId(), d);
-            }
+            if (d > EPS)
+                lan.getBill(buyers.get(i).getHouseId()).addGridImport(d);
         }
 
         for (int j = si; j < sellers.size(); j++)
         {
             double s = sellers.get(j).surplus();
-            if (s > 1e-9)
-            {
-                lan.addResidualSupply(sellers.get(j).getHouseId(), s);
-            }
+            if (s > EPS)
+                lan.getBill(sellers.get(j).getHouseId()).addGridExport(s);
         }
+    }
+
+    private static void applyP2PBuy(
+            LAN lan, List<EnergySnapshot> buyers,
+            int from, int to, double qty, double price
+    )
+    {
+        IntStream.range(from, to)
+                .mapToObj(buyers::get)
+                .forEach(b ->
+                        lan.getBill(b.getHouseId()).addP2PBuy(qty, price)
+                );
+    }
+
+    private static void applyP2PSell(
+            LAN lan, List<EnergySnapshot> sellers,
+            int from, int to, double qty, double price
+    )
+    {
+        IntStream.range(from, to)
+                .mapToObj(sellers::get)
+                .forEach(s ->
+                        lan.getBill(s.getHouseId()).addP2PSell(qty, price)
+                );
+    }
+
+    private static void settleGridImport(
+            LAN lan, List<EnergySnapshot> buyers,
+            int from, int to, double total
+    )
+    {
+        double per = total / (to - from);
+        IntStream.range(from, to)
+                .mapToObj(buyers::get)
+                .forEach(b ->
+                        lan.getBill(b.getHouseId()).addGridImport(per)
+                );
+    }
+
+    private static void settleGridExport(
+            LAN lan, List<EnergySnapshot> sellers,
+            int from, int to, double total
+    )
+    {
+        double per = total / (to - from);
+        IntStream.range(from, to)
+                .mapToObj(sellers::get)
+                .forEach(b ->
+                        lan.getBill(b.getHouseId()).addGridExport(per));
+    }
+
+    private static boolean equals(double a, double b)
+    {
+        return Math.abs(a - b) < EPS;
     }
 }

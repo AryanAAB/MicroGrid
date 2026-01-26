@@ -44,7 +44,7 @@ public class HouseTest
         House house = new House("H2", 2.0, 2.0, 5.0, 4.0);
 
         assertThrows(IllegalArgumentException.class,
-                () -> house.setProduction(-1.0));
+                () -> house.setPeakSolarKw(-1.0));
 
         assertThrows(IllegalArgumentException.class,
                 () -> house.setConsumption(-1.0));

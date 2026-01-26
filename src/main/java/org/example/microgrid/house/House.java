@@ -11,6 +11,7 @@ public class House
 
     private volatile double costPrice;
     private volatile double sellingPrice;
+    private volatile double sellThreshold;
 
     // interval stats (15 min)
     private double intervalConsumptionKwh = 0.0;
@@ -22,6 +23,7 @@ public class House
             String id,
             double initialProduction,
             double initialConsumption,
+            double sellThreshold,
             double costPrice,
             double sellingPrice
     )
@@ -30,29 +32,36 @@ public class House
         this.meter = new MeterSimulator(id, initialConsumption, initialProduction);
         setCostPrice(costPrice);
         setSellingPrice(sellingPrice);
+        setThreshold(sellThreshold);
     }
 
-    public void setProduction(double production)
+    public void setPeakSolarKw(double production)
     {
-        if (production < 0) throw new IllegalArgumentException();
+        if (production < 0) throw new IllegalArgumentException("Production cannot be less than 0.");
         meter.setPeakSolarKw(production);
     }
 
     public void setConsumption(double consumption)
     {
-        if (consumption < 0) throw new IllegalArgumentException();
+        if (consumption < 0) throw new IllegalArgumentException("Consumption cannot be less than 0.");
         meter.setDemandKw(consumption);
+    }
+
+    public void setThreshold(double threshold)
+    {
+        if (threshold < 0) throw new IllegalArgumentException("Threshold cannot be less than 0.");
+        this.sellThreshold = threshold;
     }
 
     public void setCostPrice(double costPrice)
     {
-        if (costPrice <= 0) throw new IllegalArgumentException();
+        if (costPrice <= 0) throw new IllegalArgumentException("CostPrice cannot be less than 0.");
         this.costPrice = costPrice;
     }
 
     public void setSellingPrice(double sellingPrice)
     {
-        if (sellingPrice <= 0) throw new IllegalArgumentException();
+        if (sellingPrice <= 0) throw new IllegalArgumentException("SellingPrice cannot be less than 0.");
         this.sellingPrice = sellingPrice;
     }
 
@@ -79,6 +88,11 @@ public class House
     public double getIntervalProduction()
     {
         return intervalProductionKwh;
+    }
+
+    public double getSellThreshold()
+    {
+        return sellThreshold;
     }
 
     public void step(Instant timestamp, double fractionOfDay)
