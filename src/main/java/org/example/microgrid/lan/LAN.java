@@ -38,8 +38,6 @@ public class LAN
         {
             House house = entry.getValue();
 
-            getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
-
             EnergySnapshot snapshot = getEnergySnapshot(house);
 
             if (snapshot.isSeller()) sellers.add(snapshot);
@@ -53,6 +51,8 @@ public class LAN
 
     private EnergySnapshot getEnergySnapshot(House house)
     {
+        getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
+
         double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
         double consumption = house.getIntervalConsumption();
 
