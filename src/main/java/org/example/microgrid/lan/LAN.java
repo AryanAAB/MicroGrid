@@ -2,6 +2,8 @@ package org.example.microgrid.lan;
 
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
+import org.example.microgrid.house.Location;
+
 import java.time.Instant;
 import java.util.*;
 
@@ -9,10 +11,13 @@ public class LAN {
     private final Map<String, House> houses = new HashMap<>();
     private final Map<String, Bill> bills = new HashMap<>();
     private final Grid grid;
+    private final Location transformerLocation;
+    private final double coverageRadius;
 
-    // Location-based fields removed
-    public LAN(Grid grid) {
+    public LAN(Grid grid, Location transformerLocation, double coverageRadius) {
         this.grid = grid;
+        this.transformerLocation = transformerLocation;
+        this.coverageRadius = coverageRadius;
     }
 
     public void addHouse(House house) {
@@ -43,10 +48,12 @@ public class LAN {
         double surplus = Math.max(0, production - consumption);
         double deficit = Math.max(0, consumption - production);
 
+        // Export to grid only if it hits threshold
         double gridExport = Math.min(surplus, house.getSellThreshold());
         bill.addGridExport(gridExport);
         surplus -= gridExport;
 
+        // NOTE: We do NOT add Grid Import here. TradePolicy will do it for remaining deficit.
         return new EnergySnapshot(
                 house.getHouseId(),
                 surplus,
