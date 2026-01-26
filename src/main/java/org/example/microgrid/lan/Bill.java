@@ -61,4 +61,12 @@ public class Bill
 
         return cost;
     }
+
+    public void clear()
+    {
+        p2pBuys.clear();
+        p2pSells.clear();
+        gridImported = 0;
+        gridExported = 0;
+    }
 }

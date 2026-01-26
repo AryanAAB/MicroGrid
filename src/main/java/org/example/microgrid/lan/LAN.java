@@ -4,10 +4,7 @@ import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LAN
 {
@@ -75,5 +72,17 @@ public class LAN
         {
             entry.getValue().step(timestamp, fractionOfDay);
         }
+    }
+
+    // call every 1 month
+    public Map<String, Bill> getBills()
+    {
+        return Collections.unmodifiableMap(bills);
+    }
+
+    // call every 1 month
+    public void clearBills()
+    {
+        bills.values().forEach(Bill::clear);
     }
 }
