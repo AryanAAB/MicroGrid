@@ -51,20 +51,31 @@ public class LAN
 
     private EnergySnapshot getEnergySnapshot(House house)
     {
+        // Add threshold energy to the grid
         getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
 
+        // Remaining energy is available for P2P
         double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
+
+        // Get the consumption in this interval
         double consumption = house.getIntervalConsumption();
+
+        // Get the extra deficit that this house has
+        double prevConsumption = Math.max(0, getBill(house.getHouseId()).getGridImported() -
+                getBill(house.getHouseId()).getGridExported());
 
         double surplus = 0.0, deficit = 0.0;
 
-        if(production >= consumption)
+        // If production is more, then import the entire consumption from grid
+        // and export the entire consumption and previous consumption to grid
+        if (production >= consumption + prevConsumption)
         {
             getBill(house.getHouseId()).addGridImport(consumption);
-            getBill(house.getHouseId()).addGridExport(consumption);
+            getBill(house.getHouseId()).addGridExport(consumption + prevConsumption);
 
-            surplus = production - consumption;
+            surplus = production - consumption - prevConsumption;
         }
+        // otherwise import and export the production value
         else
         {
             getBill(house.getHouseId()).addGridImport(production);
