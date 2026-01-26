@@ -1,7 +1,5 @@
 package org.example.microgrid.lan;
 
-import org.example.microgrid.grid.Grid;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -18,7 +16,7 @@ public class TradePolicy
     {
         // Sellers: Lowest Selling price first followed by max surplus
         sellers.sort(
-                Comparator.comparingDouble(EnergySnapshot::getSellingPrice)
+                Comparator.comparingDouble(EnergySnapshot::sellingPrice)
                         .thenComparing(
                                 Comparator.comparingDouble(EnergySnapshot::surplus).reversed()
                         )
@@ -26,7 +24,7 @@ public class TradePolicy
 
         // Buyers: highest willingness-to-pay first followed by min deficit
         buyers.sort(
-                Comparator.comparingDouble(EnergySnapshot::getCostPrice).reversed()
+                Comparator.comparingDouble(EnergySnapshot::costPrice).reversed()
                         .thenComparingDouble(EnergySnapshot::deficit)
         );
 
@@ -42,7 +40,7 @@ public class TradePolicy
             EnergySnapshot ls = sellers.get(si);  // leading seller (lowest price)
 
             while (bj < buyers.size()
-                    && equals(buyers.get(bj).getCostPrice(), lb.getCostPrice())
+                    && equals(buyers.get(bj).costPrice(), lb.costPrice())
                     && equals(buyers.get(bj).deficit(), lb.deficit()))
             {
                 totalDemand += buyers.get(bj).deficit();
@@ -50,16 +48,16 @@ public class TradePolicy
             }
 
             while (sj < sellers.size()
-                    && equals(sellers.get(sj).getSellingPrice(), ls.getSellingPrice())
+                    && equals(sellers.get(sj).sellingPrice(), ls.sellingPrice())
                     && equals(sellers.get(sj).surplus(), ls.surplus()))
             {
                 totalSupply += sellers.get(sj).surplus();
                 sj++;
             }
             // Stop clearing if prices no longer cross
-            if (lb.getCostPrice() + EPS < ls.getSellingPrice()) break;
+            if (lb.costPrice() + EPS < ls.sellingPrice()) break;
 
-            double price = 0.5 * (lb.getCostPrice() + ls.getSellingPrice());
+            double price = 0.5 * (lb.costPrice() + ls.sellingPrice());
             double traded = Math.min(totalDemand, totalSupply);
 
             int buyerCount = bj - bi;
@@ -90,14 +88,14 @@ public class TradePolicy
         {
             double d = buyers.get(i).deficit();
             if (d > EPS)
-                lan.getBill(buyers.get(i).getHouseId()).addGridImport(d);
+                lan.getBill(buyers.get(i).houseId()).addGridImport(d);
         }
 
         for (int j = si; j < sellers.size(); j++)
         {
             double s = sellers.get(j).surplus();
             if (s > EPS)
-                lan.getBill(sellers.get(j).getHouseId()).addGridExport(s);
+                lan.getBill(sellers.get(j).houseId()).addGridExport(s);
         }
     }
 
@@ -109,7 +107,7 @@ public class TradePolicy
         IntStream.range(from, to)
                 .mapToObj(buyers::get)
                 .forEach(b ->
-                        lan.getBill(b.getHouseId()).addP2PBuy(qty, price)
+                        lan.getBill(b.houseId()).addP2PBuy(qty, price)
                 );
     }
 
@@ -121,7 +119,7 @@ public class TradePolicy
         IntStream.range(from, to)
                 .mapToObj(sellers::get)
                 .forEach(s ->
-                        lan.getBill(s.getHouseId()).addP2PSell(qty, price)
+                        lan.getBill(s.houseId()).addP2PSell(qty, price)
                 );
     }
 
@@ -134,7 +132,7 @@ public class TradePolicy
         IntStream.range(from, to)
                 .mapToObj(buyers::get)
                 .forEach(b ->
-                        lan.getBill(b.getHouseId()).addGridImport(per)
+                        lan.getBill(b.houseId()).addGridImport(per)
                 );
     }
 
@@ -147,7 +145,7 @@ public class TradePolicy
         IntStream.range(from, to)
                 .mapToObj(sellers::get)
                 .forEach(b ->
-                        lan.getBill(b.getHouseId()).addGridExport(per));
+                        lan.getBill(b.houseId()).addGridExport(per));
     }
 
     private static boolean equals(double a, double b)

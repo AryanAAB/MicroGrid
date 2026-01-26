@@ -3,7 +3,6 @@ package org.example.microgrid;
 import org.example.microgrid.constants.Constants;
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
-import org.example.microgrid.lan.Bill;
 import org.example.microgrid.lan.LAN;
 import org.junit.jupiter.api.Test;
 
@@ -57,8 +56,8 @@ public class LANTest
             current = current.plusSeconds((long) Constants.STEP_TO_SECONDS);
         }
 
-        double expectedAmount = totalEnergy >= 0 ? totalEnergy * grid.getBuyPrice() : totalEnergy * grid.getSellPrice();
+        double expectedAmount = totalEnergy >= 0 ? totalEnergy * grid.buyPrice() : totalEnergy * grid.sellPrice();
 
-        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(grid.getBuyPrice(), grid.getSellPrice()), 0.001);
+        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(grid.buyPrice(), grid.sellPrice()), 0.001);
     }
 }
