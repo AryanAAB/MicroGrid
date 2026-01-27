@@ -14,10 +14,12 @@ public class LAN
     private final Map<String, House> houses = new HashMap<>();
     private final Map<String, Bill> bills = new HashMap<>();
     private final Grid grid;
+    private final TradePolicy tradePolicy;
 
-    public LAN(Grid grid)
+    public LAN(Grid grid, TradePolicy tradePolicy)
     {
         this.grid = grid;
+        this.tradePolicy = tradePolicy;
     }
 
     public void addHouse(House house)
@@ -35,7 +37,7 @@ public class LAN
         {
             House house = entry.getValue();
 
-            EnergySnapshot snapshot = TradePolicy.getEnergySnapshot(this, house);
+            EnergySnapshot snapshot = tradePolicy.getEnergySnapshot(this, house);
 
             if (snapshot.isSeller()) sellers.add(snapshot);
             if (snapshot.isBuyer()) buyers.add(snapshot);
@@ -43,7 +45,7 @@ public class LAN
             house.resetIntervalStats();
         }
 
-        TradePolicy.match(this, sellers, buyers);
+        tradePolicy.trade(this, sellers, buyers);
     }
 
     public void step(Instant timestamp, double fractionOfDay)

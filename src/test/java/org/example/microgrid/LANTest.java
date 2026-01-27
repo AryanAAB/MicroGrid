@@ -3,10 +3,7 @@ package org.example.microgrid;
 import org.example.microgrid.constants.Constants;
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
-import org.example.microgrid.lan.Bill;
-import org.example.microgrid.lan.EnergySnapshot;
-import org.example.microgrid.lan.LAN;
-import org.example.microgrid.lan.TradePolicy;
+import org.example.microgrid.lan.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -22,7 +19,8 @@ public class LANTest
     {
         // Create grid and LAN
         Grid grid = new Grid(10, 5);
-        LAN lan = new LAN(grid);
+        TradePolicy policy = new NetP2PPolicy();
+        LAN lan = new LAN(grid, policy);
 
         // Create a house and add to LAN
         House house = new House(
@@ -69,7 +67,7 @@ public class LANTest
     @Test
     void testP2PTradeClearsCorrectly()
     {
-        LAN lan = new LAN(null);
+        LAN lan = new LAN(null, null);
 
         House h1 = new House("A", 0, 0, 0, 10, 5);
         House h2 = new House("B", 0, 0, 0, 10, 5);
@@ -91,7 +89,7 @@ public class LANTest
         List<EnergySnapshot> sellerList = new ArrayList<>();
         sellerList.add(seller);
 
-        TradePolicy.match(lan, sellerList, buyerList);
+        new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
         Bill sellerBill = lan.getBill("A");
         Bill buyerBill = lan.getBill("B");
@@ -103,7 +101,7 @@ public class LANTest
     @Test
     void testNoP2PWhenPricesDoNotCross()
     {
-        LAN lan = new LAN(null);
+        LAN lan = new LAN(null, null);
 
         lan.addHouse(new House("S", 0, 0, 0, 10, 5));
         lan.addHouse(new House("B", 0, 0, 0, 10, 5));
@@ -122,7 +120,7 @@ public class LANTest
         List<EnergySnapshot> sellerList = new ArrayList<>();
         sellerList.add(seller);
 
-        TradePolicy.match(lan, sellerList, buyerList);
+        new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
         assertEquals(10.0, lan.getBill("B").getGridImported(), 1e-9);
         assertEquals(10.0, lan.getBill("S").getGridExported(), 1e-9);
@@ -131,7 +129,7 @@ public class LANTest
     @Test
     void testFairSplitAmongBuyers()
     {
-        LAN lan = new LAN(null);
+        LAN lan = new LAN(null, null);
 
         lan.addHouse(new House("S", 0, 0, 0, 10, 5));
         lan.addHouse(new House("B1", 0, 0, 0, 10, 5));
@@ -152,7 +150,7 @@ public class LANTest
         List<EnergySnapshot> sellerList = new ArrayList<>();
         sellerList.add(seller);
 
-        TradePolicy.match(lan, sellerList, buyerList);
+        new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
         assertEquals(7.5 * 10 / 3, lan.getBill("B1").getP2PCost(), 1e-9);
         assertEquals(7.5 * 10 / 3, lan.getBill("B1").getP2PCost(), 1e-9);
@@ -179,7 +177,7 @@ public class LANTest
     @Test
     void testCheapestSellerClearsFirst()
     {
-        LAN lan = new LAN(null);
+        LAN lan = new LAN(null, null);
 
         lan.addHouse(new House("S1", 0, 0, 0, 10, 5));
         lan.addHouse(new House("S2", 0, 0, 0, 10, 5));
@@ -196,7 +194,7 @@ public class LANTest
         sellerList.add(s1);
         sellerList.add(s2);
 
-        TradePolicy.match(lan, sellerList, buyerList);
+        new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
         assertEquals(-21.0, lan.getBill("S1").getNetBill(30, 15), 1e-9);
         assertEquals(-8.0, lan.getBill("S2").getNetBill(30, 15), 1e-9);
