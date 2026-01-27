@@ -1,5 +1,7 @@
 package org.example.microgrid.lan;
 
+import org.example.microgrid.house.House;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -8,7 +10,9 @@ public class TradePolicy
 {
     private static final double EPS = 1e-9;
 
-    private TradePolicy() {}
+    private TradePolicy()
+    {
+    }
 
     public static void match(
             LAN lan,
@@ -105,6 +109,64 @@ public class TradePolicy
             if (s > EPS)
                 lan.getBill(sellers.get(j).houseId()).addGridExport(s);
         }
+    }
+
+    public static EnergySnapshot getEnergySnapshot(LAN lan, House house)
+    {
+        // Add threshold energy to the grid
+        lan.getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
+
+        // Remaining energy is available for P2P
+        double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
+
+        // Get the consumption in this interval
+        double consumption = house.getIntervalConsumption();
+
+        // Get the extra deficit that this house has
+        double prevConsumption = Math.max(0, lan.getBill(house.getHouseId()).getGridImported() -
+                lan.getBill(house.getHouseId()).getGridExported());
+
+        double surplus = 0.0, deficit = 0.0;
+
+        // the previous consumption is met by current production
+        if(production >= prevConsumption)
+        {
+            lan.getBill(house.getHouseId()).addGridExport(prevConsumption);
+
+            production -= prevConsumption;
+        }
+        //otherwise the entire production goes into net metering
+        else
+        {
+            lan.getBill(house.getHouseId()).addGridExport(production);
+
+            production = 0;
+        }
+
+        // production satisfies current consumption so consume and export from and to grid
+        if(production >= consumption)
+        {
+            lan.getBill(house.getHouseId()).addGridImport(consumption);
+            lan.getBill(house.getHouseId()).addGridExport(consumption);
+
+            surplus = production - consumption;
+        }
+        // otherwise the entire production goes into net metering
+        else
+        {
+            lan.getBill(house.getHouseId()).addGridImport(production);
+            lan.getBill(house.getHouseId()).addGridExport(production);
+
+            deficit = consumption - production;
+        }
+
+        return new EnergySnapshot(
+                house.getHouseId(),
+                surplus,
+                deficit,
+                house.getSellingPrice(),
+                house.getCostPrice()
+        );
     }
 
     private static void applyP2PBuy(
