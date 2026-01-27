@@ -2,7 +2,6 @@ package org.example.microgrid.lan;
 
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
-import org.example.microgrid.house.Location;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -15,14 +14,10 @@ public class LAN
     private final Map<String, House> houses = new HashMap<>();
     private final Map<String, Bill> bills = new HashMap<>();
     private final Grid grid;
-    private final Location transformerLocation;
-    private final double coverageRadius;
 
-    public LAN(Grid grid, Location transformerLocation, double coverageRadius)
+    public LAN(Grid grid)
     {
         this.grid = grid;
-        this.transformerLocation = transformerLocation;
-        this.coverageRadius = coverageRadius;
     }
 
     public void addHouse(House house)
