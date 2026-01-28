@@ -1,10 +1,10 @@
-package org.example.microgrid.lan;
+package org.example.microgrid.lan.Policy;
 
 import org.example.microgrid.house.House;
+import org.example.microgrid.lan.EnergySnapshot;
+import org.example.microgrid.lan.LAN;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public interface TradePolicy
 {

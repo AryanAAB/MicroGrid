@@ -4,6 +4,8 @@ import org.example.microgrid.constants.Constants;
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
 import org.example.microgrid.lan.*;
+import org.example.microgrid.lan.Policy.NetP2PPolicy;
+import org.example.microgrid.lan.Policy.TradePolicy;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

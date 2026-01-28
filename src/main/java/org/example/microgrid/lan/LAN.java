@@ -2,6 +2,7 @@ package org.example.microgrid.lan;
 
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
+import org.example.microgrid.lan.Policy.TradePolicy;
 
 import java.time.Instant;
 import java.util.ArrayList;
