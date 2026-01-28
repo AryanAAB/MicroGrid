@@ -8,13 +8,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class NetP2PPolicy implements TradePolicy
+public class NetP2PPolicy extends NetMeteringPolicy
 {
     private static final double EPS = 1e-9;
 
     @Override
     public void trade(LAN lan, List<EnergySnapshot> sellers, List<EnergySnapshot> buyers)
     {
+        //clears the grid import and export
+        super.trade(lan, sellers, buyers);
+
         // Sellers: Lowest Selling price first followed by max surplus
         sellers.sort(
                 Comparator.comparingDouble(EnergySnapshot::sellingPrice)
@@ -109,8 +112,10 @@ public class NetP2PPolicy implements TradePolicy
     @Override
     public EnergySnapshot getEnergySnapshot(LAN lan, House house)
     {
+        double gridExport = 0.0, gridImport = 0.0;
+
         // Add threshold energy to the grid
-        lan.getBill(house.getHouseId()).addGridExport(Math.min(house.getSellThreshold(), house.getIntervalProduction()));
+        gridExport += Math.min(house.getSellThreshold(), house.getIntervalProduction());
 
         // Remaining energy is available for P2P
         double production = Math.max(0, house.getIntervalProduction() - house.getSellThreshold());
@@ -127,14 +132,14 @@ public class NetP2PPolicy implements TradePolicy
         // the previous consumption is met by current production
         if (production >= prevConsumption)
         {
-            lan.getBill(house.getHouseId()).addGridExport(prevConsumption);
+            gridExport += prevConsumption;
 
             production -= prevConsumption;
         }
         //otherwise the entire production goes into net metering
         else
         {
-            lan.getBill(house.getHouseId()).addGridExport(production);
+            gridExport += production;
 
             production = 0;
         }
@@ -142,22 +147,24 @@ public class NetP2PPolicy implements TradePolicy
         // production satisfies current consumption so consume and export from and to grid
         if (production >= consumption)
         {
-            lan.getBill(house.getHouseId()).addGridImport(consumption);
-            lan.getBill(house.getHouseId()).addGridExport(consumption);
+            gridExport += consumption;
+            gridImport += consumption;
 
             surplus = production - consumption;
         }
         // otherwise the entire production goes into net metering
         else
         {
-            lan.getBill(house.getHouseId()).addGridImport(production);
-            lan.getBill(house.getHouseId()).addGridExport(production);
+            gridExport += production;
+            gridImport += production;
 
             deficit = consumption - production;
         }
 
         return new EnergySnapshot(
                 house.getHouseId(),
+                gridExport,
+                gridImport,
                 surplus,
                 deficit,
                 house.getSellingPrice(),

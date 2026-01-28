@@ -3,7 +3,10 @@ package org.example.microgrid;
 import org.example.microgrid.constants.Constants;
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
-import org.example.microgrid.lan.*;
+import org.example.microgrid.lan.Bill;
+import org.example.microgrid.lan.EnergySnapshot;
+import org.example.microgrid.lan.LAN;
+import org.example.microgrid.lan.Policy.NetMeteringPolicy;
 import org.example.microgrid.lan.Policy.NetP2PPolicy;
 import org.example.microgrid.lan.Policy.TradePolicy;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LANTest
 {
@@ -78,11 +82,11 @@ public class LANTest
         lan.addHouse(h2);
 
         EnergySnapshot seller = new EnergySnapshot(
-                "A", 10.0, 0.0, 5.0, 0.0
+                "A", 0, 0, 10.0, 0.0, 5.0, 0.0
         );
 
         EnergySnapshot buyer = new EnergySnapshot(
-                "B", 0.0, 10.0, 0.0, 10.0
+                "B", 0, 0, 0.0, 10.0, 0.0, 10.0
         );
 
         List<EnergySnapshot> buyerList = new ArrayList<>();
@@ -109,11 +113,11 @@ public class LANTest
         lan.addHouse(new House("B", 0, 0, 0, 10, 5));
 
         EnergySnapshot seller = new EnergySnapshot(
-                "S", 10.0, 0.0, 8.0, 0.0
+                "S", 0, 0, 10.0, 0.0, 8.0, 0.0
         );
 
         EnergySnapshot buyer = new EnergySnapshot(
-                "B", 0.0, 10.0, 0.0, 6.0
+                "B", 0, 0, 0.0, 10.0, 0.0, 6.0
         );
 
         List<EnergySnapshot> buyerList = new ArrayList<>();
@@ -138,11 +142,11 @@ public class LANTest
         lan.addHouse(new House("B2", 0, 0, 0, 10, 5));
         lan.addHouse(new House("B3", 0, 9, 0, 10, 5));
 
-        EnergySnapshot seller = new EnergySnapshot("S", 10, 0, 5, 0);
+        EnergySnapshot seller = new EnergySnapshot("S", 0, 0, 10, 0, 5, 0);
 
-        EnergySnapshot b1 = new EnergySnapshot("B1", 0, 5, 0, 10);
-        EnergySnapshot b2 = new EnergySnapshot("B2", 0, 5, 0, 10);
-        EnergySnapshot b3 = new EnergySnapshot("B3", 0, 5, 0, 10);
+        EnergySnapshot b1 = new EnergySnapshot("B1", 0, 0, 0, 5, 0, 10);
+        EnergySnapshot b2 = new EnergySnapshot("B2", 0, 0, 0, 5, 0, 10);
+        EnergySnapshot b3 = new EnergySnapshot("B3", 0, 0, 0, 5, 0, 10);
 
         List<EnergySnapshot> buyerList = new ArrayList<>();
         buyerList.add(b1);
@@ -185,9 +189,9 @@ public class LANTest
         lan.addHouse(new House("S2", 0, 0, 0, 10, 5));
         lan.addHouse(new House("B", 0, 0, 0, 10, 5));
 
-        EnergySnapshot s1 = new EnergySnapshot("S1", 3, 0, 4, 0);
-        EnergySnapshot s2 = new EnergySnapshot("S2", 1, 0, 6, 0);
-        EnergySnapshot b  = new EnergySnapshot("B", 0, 5, 0, 10);
+        EnergySnapshot s1 = new EnergySnapshot("S1", 0, 0, 3, 0, 4, 0);
+        EnergySnapshot s2 = new EnergySnapshot("S2", 0, 0, 1, 0, 6, 0);
+        EnergySnapshot b = new EnergySnapshot("B", 0, 0, 0, 5, 0, 10);
 
         List<EnergySnapshot> buyerList = new ArrayList<>();
         buyerList.add(b);
@@ -203,4 +207,113 @@ public class LANTest
         assertEquals(59.0, lan.getBill("B").getNetBill(30, 15), 1e-9);
     }
 
+    @Test
+    void epsBoundaryDoesNotLoop()
+    {
+        LAN lan = new LAN(null, null);
+        lan.addHouse(new House("B1", 0, 0, 0, 10, 5));
+        lan.addHouse(new House("S1", 0, 0, 0, 10, 5));
+
+        NetP2PPolicy policy = new NetP2PPolicy();
+
+        EnergySnapshot buyer =
+                new EnergySnapshot("B1", 0, 0, 0, 1e-10, 0, 5);
+        EnergySnapshot seller =
+                new EnergySnapshot("S1", 0, 0, 1e-10, 0, 5, 0);
+
+        List<EnergySnapshot> buyerList = new ArrayList<>();
+        buyerList.add(buyer);
+
+        List<EnergySnapshot> sellerList = new ArrayList<>();
+        sellerList.add(seller);
+
+        policy.trade(lan, sellerList, buyerList);
+
+        // Should not explode or trade negative energy
+        assertTrue(lan.getBill("B1").getP2PCost() >= 0);
+        assertTrue(lan.getBill("S1").getP2PRevenue() >= 0);
+    }
+
+    private void simulateOneDay(
+            LAN lan,
+            TradePolicy policy
+    )
+    {
+        int steps = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS);
+        double fractionOfDay =
+                Constants.STEP_TO_SECONDS / (double) Constants.SEC_IN_DAY;
+
+        Instant current = Instant.now();
+
+        for (int i = 0; i < steps; i++)
+        {
+            lan.step(current, i * fractionOfDay);
+
+            // every 15 minutes → trade
+            if ((i + 1) % (15 * 60 / Constants.STEP_TO_SECONDS) == 0)
+            {
+                lan.runMarketCycle();
+            }
+
+            current = current.plusSeconds((long) (Constants.STEP_TO_SECONDS));
+        }
+    }
+
+    @Test
+    void simulateOneDay_netMetering()
+    {
+        TradePolicy policy = new NetMeteringPolicy();
+        Grid grid = new Grid(4, 10);
+
+        LAN lan = new LAN(grid, policy);
+
+        List<House> houses = List.of(
+                new House("H1", 2.0, 0.5, 0.2, 5.0, 6.0), // prosumer
+                new House("H2", 0.0, 2.0, 0.0, 6.0, 8.0), // pure consumer
+                new House("H3", 3.0, 0.3, 0.1, 4.0, 5.0)  // exporter
+        );
+
+        houses.forEach(lan::addHouse);
+
+        simulateOneDay(lan, policy);
+
+        houses.forEach(h ->
+        {
+            Bill bill = lan.getBill(h.getHouseId());
+
+            System.out.println(
+                    "[NetMetering] " + h.getHouseId()
+                    + " [Amount] " + bill.getNetBill(grid.buyPrice(), grid.sellPrice())
+            );
+        });
+    }
+
+    @Test
+    void simulateOneDay_netP2PMetering()
+    {
+        TradePolicy policy = new NetP2PPolicy();
+        Grid grid = new Grid(4, 10);
+
+        LAN lan = new LAN(grid, policy);
+
+        List<House> houses = List.of(
+                new House("H1", 2.0, 0.5, 0.2, 5.0, 6.0), // prosumer
+                new House("H2", 0.0, 2.0, 0.0, 6.0, 8.0), // pure consumer
+                new House("H3", 3.0, 0.3, 0.1, 4.0, 5.0)  // exporter
+        );
+
+        houses.forEach(lan::addHouse);
+
+        simulateOneDay(lan, policy);
+
+        houses.forEach(h ->
+        {
+            Bill bill = lan.getBill(h.getHouseId());
+
+            System.out.println(
+                    "[Net P2P] " + h.getHouseId()
+                            + " [Amount] " + bill.getNetBill(grid.buyPrice(), grid.sellPrice())
+            );
+        });
+    }
 }

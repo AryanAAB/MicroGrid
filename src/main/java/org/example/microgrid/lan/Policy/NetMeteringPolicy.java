@@ -11,14 +11,23 @@ public class NetMeteringPolicy implements TradePolicy
     @Override
     public void trade(LAN lan, List<EnergySnapshot> haveSurplus, List<EnergySnapshot> haveDeficit)
     {
+        exchangeWithGrid(lan, haveSurplus);
+        exchangeWithGrid(lan, haveDeficit);
     }
 
     @Override
     public EnergySnapshot getEnergySnapshot(LAN lan, House house)
     {
-        lan.getBill(house.getHouseId()).addGridExport(house.getIntervalProduction());
-        lan.getBill(house.getHouseId()).addGridImport(house.getIntervalConsumption());
+        return new EnergySnapshot(house.getHouseId(), house.getIntervalProduction(), house.getIntervalConsumption(),
+                0, 0, house.getSellingPrice(), house.getCostPrice());
+    }
 
-        return new EnergySnapshot(house.getHouseId(), 0, 0, house.getSellingPrice(), house.getCostPrice());
+    private void exchangeWithGrid(LAN lan, List<EnergySnapshot> snapshots)
+    {
+        for(EnergySnapshot snap : snapshots)
+        {
+            lan.getBill(snap.houseId()).addGridImport(snap.gridImport());
+            lan.getBill(snap.houseId()).addGridExport(snap.gridExport());
+        }
     }
 }

@@ -41,7 +41,7 @@ public class LAN
             EnergySnapshot snapshot = tradePolicy.getEnergySnapshot(this, house);
 
             if (snapshot.isSeller()) sellers.add(snapshot);
-            if (snapshot.isBuyer()) buyers.add(snapshot);
+            else buyers.add(snapshot);
 
             house.resetIntervalStats();
         }
