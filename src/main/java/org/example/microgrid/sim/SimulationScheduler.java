@@ -26,6 +26,6 @@ public class SimulationScheduler {
         }
 
         // 3. Optional: In a real simulation, you'd move this to a Monthly Scheduler
-         lan.resetDailyStats(); 
+         lan.resetStats();
     }
 }

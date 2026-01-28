@@ -1,5 +1,7 @@
 package org.example.microgrid.lan;
 
+import org.example.microgrid.grid.Grid;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +47,16 @@ public class Bill
         return gridExported;
     }
 
-    // ---------- Costs ----------
+    public double getP2PBuyAmount()
+    {
+        return p2pBuys.stream().mapToDouble(P2PTrade::energy).sum();
+    }
+
+    public double getP2PSellAmount()
+    {
+        return p2pSells.stream().mapToDouble(P2PTrade::energy).sum();
+    }
+
     public double getP2PCost()
     {
         return p2pBuys.stream().mapToDouble(P2PTrade::getValue).sum();
@@ -56,17 +67,17 @@ public class Bill
         return p2pSells.stream().mapToDouble(P2PTrade::getValue).sum();
     }
 
-    public double getNetBill(double gridBuyPrice, double gridSellPrice)
+    public double getNetBill(Grid grid)
     {
         double cost = getP2PCost() - getP2PRevenue();
 
         if(gridExported >= gridImported)
         {
-            cost -= (gridExported - gridImported) * gridSellPrice;
+            cost -= (gridExported - gridImported) * grid.sellPrice();
         }
         else
         {
-            cost += (gridImported - gridExported) * gridBuyPrice;
+            cost += (gridImported - gridExported) * grid.buyPrice();
         }
 
         return cost;

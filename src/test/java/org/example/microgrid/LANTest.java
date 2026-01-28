@@ -67,7 +67,7 @@ public class LANTest
 
         double expectedAmount = totalEnergy >= 0 ? totalEnergy * grid.buyPrice() : totalEnergy * grid.sellPrice();
 
-        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(grid.buyPrice(), grid.sellPrice()), 0.001);
+        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(grid), 0.001);
     }
 
     @Test
@@ -183,7 +183,8 @@ public class LANTest
     @Test
     void testCheapestSellerClearsFirst()
     {
-        LAN lan = new LAN(null, null);
+        Grid grid = new Grid(30, 15);
+        LAN lan = new LAN(grid, null);
 
         lan.addHouse(new House("S1", 0, 0, 0, 10, 5));
         lan.addHouse(new House("S2", 0, 0, 0, 10, 5));
@@ -202,9 +203,9 @@ public class LANTest
 
         new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
-        assertEquals(-21.0, lan.getBill("S1").getNetBill(30, 15), 1e-9);
-        assertEquals(-8.0, lan.getBill("S2").getNetBill(30, 15), 1e-9);
-        assertEquals(59.0, lan.getBill("B").getNetBill(30, 15), 1e-9);
+        assertEquals(-21.0, lan.getBill("S1").getNetBill(grid), 1e-9);
+        assertEquals(-8.0, lan.getBill("S2").getNetBill(grid), 1e-9);
+        assertEquals(59.0, lan.getBill("B").getNetBill(grid), 1e-9);
     }
 
     @Test
@@ -234,10 +235,7 @@ public class LANTest
         assertTrue(lan.getBill("S1").getP2PRevenue() >= 0);
     }
 
-    private void simulateOneDay(
-            LAN lan,
-            TradePolicy policy
-    )
+    private void simulateDays(LAN lan, double days)
     {
         int steps = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS);
         double fractionOfDay =
@@ -245,9 +243,9 @@ public class LANTest
 
         Instant current = Instant.now();
 
-        for (int i = 0; i < steps; i++)
+        for (int i = 0; i < days * steps; i++)
         {
-            lan.step(current, i * fractionOfDay);
+            lan.step(current, (i % steps) * fractionOfDay);
 
             // every 15 minutes → trade
             if ((i + 1) % (15 * 60 / Constants.STEP_TO_SECONDS) == 0)
@@ -259,11 +257,9 @@ public class LANTest
         }
     }
 
-    @Test
-    void simulateOneDay_netMetering()
+    private void simulate(TradePolicy policy, String title)
     {
-        TradePolicy policy = new NetMeteringPolicy();
-        Grid grid = new Grid(4, 10);
+        Grid grid = new Grid(10, 3);
 
         LAN lan = new LAN(grid, policy);
 
@@ -275,45 +271,40 @@ public class LANTest
 
         houses.forEach(lan::addHouse);
 
-        simulateOneDay(lan, policy);
+        simulateDays(lan, 30);
 
         houses.forEach(h ->
         {
             Bill bill = lan.getBill(h.getHouseId());
 
-            System.out.println(
-                    "[NetMetering] " + h.getHouseId()
-                    + " [Amount] " + bill.getNetBill(grid.buyPrice(), grid.sellPrice())
+            System.out.printf(
+                    "[%-12s] %-2s | Grid Export: %8.3f | Grid Import: %8.3f | " +
+                            "P2P Buy Amt: %8.3f | P2P Sell Amt: %8.3f | " +
+                            "P2P Buy: %8.3f | P2P Revenue: %8.3f | Net Cost: %8.3f%n",
+                    title,
+                    h.getHouseId(),
+                    bill.getGridExported(),
+                    bill.getGridImported(),
+                    bill.getP2PBuyAmount(),
+                    bill.getP2PSellAmount(),
+                    bill.getP2PCost(),
+                    bill.getP2PRevenue(),
+                    bill.getNetBill(grid)
             );
         });
+
+        lan.resetStats();
+    }
+
+    @Test
+    void simulateOneDay_netMetering()
+    {
+        simulate(new NetMeteringPolicy(), "NetMetering");
     }
 
     @Test
     void simulateOneDay_netP2PMetering()
     {
-        TradePolicy policy = new NetP2PPolicy();
-        Grid grid = new Grid(4, 10);
-
-        LAN lan = new LAN(grid, policy);
-
-        List<House> houses = List.of(
-                new House("H1", 2.0, 0.5, 0.2, 5.0, 6.0), // prosumer
-                new House("H2", 0.0, 2.0, 0.0, 6.0, 8.0), // pure consumer
-                new House("H3", 3.0, 0.3, 0.1, 4.0, 5.0)  // exporter
-        );
-
-        houses.forEach(lan::addHouse);
-
-        simulateOneDay(lan, policy);
-
-        houses.forEach(h ->
-        {
-            Bill bill = lan.getBill(h.getHouseId());
-
-            System.out.println(
-                    "[Net P2P] " + h.getHouseId()
-                            + " [Amount] " + bill.getNetBill(grid.buyPrice(), grid.sellPrice())
-            );
-        });
+        simulate(new NetP2PPolicy(), "P2PMetering");
     }
 }

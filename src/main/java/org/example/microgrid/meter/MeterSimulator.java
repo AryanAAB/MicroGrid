@@ -24,7 +24,7 @@ public class MeterSimulator extends Meter
     private static final double SOLAR_NOISE_FACTOR = 0.05; // 5%
 
     //random variables
-    private final Random random = new Random();
+    private final Random random = new Random(42);
 
     //user-configurable parameters
     private volatile double averageDemandKw;

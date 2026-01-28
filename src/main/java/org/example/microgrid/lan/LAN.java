@@ -64,7 +64,7 @@ public class LAN
         return grid;
     }
 
-    public void resetDailyStats()
+    public void resetStats()
     {
         bills.values().forEach(Bill::clear);
     }
