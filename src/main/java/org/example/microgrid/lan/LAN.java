@@ -68,4 +68,12 @@ public class LAN
     {
         bills.values().forEach(Bill::clear);
     }
+    public List<Bill> getBills()
+    {
+        List<Bill> ans = new ArrayList<>();
+        for(Bill bill:bills.values()){
+            ans.add(bill);
+        }
+        return ans;
+    }
 }
