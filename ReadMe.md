@@ -28,8 +28,18 @@ Participants may be:
 The grid acts as a backup, not the first option.
 
 <figure>
+  <img src="images/Consumer.png" alt="Sample meter reading of a consumer">
+  <figcaption style="text-align: center;">Figure 1: Sample meter reading of a consumer</figcaption>
+</figure>
+
+<figure>
+  <img src="images/Producer.png" alt="Sample meter reading of a producer">
+  <figcaption style="text-align: center;">Figure 1: Sample meter reading of a producer</figcaption>
+</figure>
+
+<figure>
   <img src="images/Prosumer.png" alt="Sample meter reading of a prosumer">
-  <figcaption>Figure 1: Sample meter reading of a prosumer</figcaption>
+  <figcaption style="text-align: center;">Figure 3: Sample meter reading of a prosumer</figcaption>
 </figure>
 
 
@@ -55,7 +65,11 @@ Each house may simultaneously:
 
 Time is discretized into fixed-length intervals t.
 
-
-
 ## Per-House Energy Accounting (Energy Snapshot)
 For each house h and interval t, an Energy Snapshot is computed.
+- Interval production: P<sub>h</sub><sup>t</sup>
+- Interval consumption: C_h^t
+- Selling price (ask): p_h^sell
+- Cost price (bid): p_h^buy
+- Sell threshold: θ_h
+- Historical net grid consumption from previous intervals: G_h^(t−1)
