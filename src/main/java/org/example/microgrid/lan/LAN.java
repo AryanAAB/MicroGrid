@@ -70,7 +70,9 @@ public class LAN
     }
     public List<Bill> getBills()
     {
-              
-        bills.values().forEach(bill::getBill).;
+        List<Bill> ans = new ArrayList<>();
+        for(Bill bill:bills.values()){
+            ans.add(bill);
+        }
     }
 }
