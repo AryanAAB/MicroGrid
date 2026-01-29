@@ -117,7 +117,7 @@ $$deficit_h = max(0, C_h^t - P_h^{avail})$$
 ### Snapshot Output
 Finally, each house publishes
 
-$$S^t_h = (surplus_h, deficit_h, p_h^{sell}, p_h^{buy}$$
+$$S^t_h = (surplus_h, deficit_h, p_h^{sell}, p_h^{buy})$$
 
 These snapshots form the inputs to the P2P market.
 
@@ -125,7 +125,7 @@ These snapshots form the inputs to the P2P market.
 Houses are partitioned into two disjoint sets:
 
 - Sellers: $$\mathcal{S} = {h | surplus_h > 0}$$
-- Buyers: $$\maathcal{B} = {h | deficit_h > 0}$$
+- Buyers: $$\mathcal{B} = {h | deficit_h > 0}$$
 
 ## Market Ordering
 To perform price-based clearing,
@@ -140,7 +140,13 @@ buyers are sorted by
 
 This ordering ensures that
 - lowest-cost energy is supplied first
-- highest-value demand (households which will benefit the most from P2P) is satisfied first
+- highest-value demand is satisfied first
+
+This is done so that energy is allocated to its highest-valued use at the lowest possible local cost, thereby 
+maximizing social welfare within the microgrid while guaranteeing that no buyer pays more than their bid and no seller 
+receives less than their ask. Moreover, highest-value demand is satisfied first because buyers with larger energy deficits 
+experience greater marginal utility from additional energy. Prioritizing such demand ensures that limited local supply 
+is allocated to those for whom the energy is most immediately useful.
 
 ## Window-Based Market Clearing
 The algorithm proceeds by selecting price and deficit/surplus homogenous windows of buyers and sellers. That is, all
