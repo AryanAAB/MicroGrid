@@ -13,36 +13,18 @@ public class LANManager
 {
 
     private final Map<String, LAN> lans = new HashMap<>();
-    private final MeterRegistry meterRegistry;
 
-    public LANManager(MeterRegistry meterRegistry)
+    public LANManager()
     {
-        this.meterRegistry = meterRegistry;
+        initializeMapping();
     }
 
-    public void registerLAN(String lanId, LAN lan)
-    {
-        lans.put(lanId, lan);
-    }
-
-    public LAN assignHouse(House house)
-    {
-        String lanId = meterRegistry.getLanId(house.getMeterId());
-
-        if (lanId == null)
-        {
-            throw new RuntimeException("No LAN mapping found for meter: " + house.getMeterId());
-        }
-
-        LAN lan = lans.get(lanId);
-
-        if (lan == null)
-        {
-            throw new RuntimeException("LAN not registered: " + lanId);
-        }
-
-        lan.addHouse(house);
-        return lan;
+    public void initializeMapping(){
+        // Initialize Firebase users.
+        // Every user has a meterID.
+        // The first letter of the meter ID is the ID of the newly created lan.
+        // Constructor of House is     public House( String id <use same as meter id of this user in firebase>, double initialProduction <set 2.5>, double initialConsumption <set 0.5>, double sellThreshold <set 0.2>, double costPrice <use buyBidPrice of this user from firebase>, double sellingPrice <use sellingPrice from firebase>)
+        // Constructor of Lan is just public LAN()
     }
 
     public void runMarketCycles()
