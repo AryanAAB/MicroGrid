@@ -53,9 +53,7 @@ The following section formally defines the system model, per-house energy accoun
 ## System Model
 Consider a microgrid consisting of a set of houses:
 
-<div align="center">
-H = { h<sub>1</sub>, h<sub>2</sub>, ..., h<sub>N</sub> }
-</div>
+$$\mathcal{H} = \{ h_1, h_2, \dots, h_N \}$$
 
 Each house may simultaneously:
 - consume electrical energy
@@ -63,19 +61,34 @@ Each house may simultaneously:
 - participate in local P2P trading
 - exchange residual energy with the utility grid
 
-Time is discretized into fixed-length intervals t.
+Time is discretized into fixed-length intervals `t`.
 
 ## Per-House Energy Accounting (Energy Snapshot)
-For each house h and interval t, an Energy Snapshot is computed using the following parameters:
-- Interval production: P<sub>h</sub><sup>t</sup>
-- Interval consumption: C<sub>h</sub><sup>t</sup>
-- Selling price (ask): p<sub>h</sub><sup>sell</sup>
-- Cost price (bid): p<sub>h</sub><sup>buy</sup>
-- Sell threshold: θ<sub>h</sub>
-- Historical net grid consumption from previous intervals
+For each house `h` and interval `t`, an energy snapshot is computed using the following parameters:
+- Interval production: $$P_h^t$$
+- Interval consumption: $$C_h^t$$
+- Selling price (ask): $$p_h^sell$$
+- Cost price (bid): $$p_h^buy$$
+- Sell threshold: $$θ_h$$
+- Historical grid import: $$G_{h, import}^{hist}$$
+- Historical grid export: $$G_{h, export}^{hist}$$
 
 ## Threshold-Based Grid Commitment
 A fixed minimum quantity of generated energy is exported to the grid each time interval. This is to ensure that a user
 can use the excess energy generated to compensate for grid imports in the future if needed.
 
-$$G_{h,export}^{threshold}$$
+$$G_{h,export}^{threshold} = min(θ_h,P_h^t)$$
+
+The remaining production becomes eligible for local trading:
+
+$$ P_h^{avail} = P_h^t - G_{h,export}^{threshold}$$
+
+## Net Metering of Historical Consumption
+Let the net historical grid deficit for a house `h` at time interval `t` be:
+
+$$ D_h^{prev} = max(0, G_{h, import}^{hist} - G_{h, export}^{hist}) $$
+
+The available production $$P_h^{avail}$$ first offsets this deficit. Any energy used for this purpose is still settled
+through the grid to preserve net-metering consistency. 
+
+## Current Interval Consumption Matching
