@@ -63,17 +63,17 @@ Each house may simultaneously:
 
 Time is discretized into fixed-length intervals `t`.
 
-## Per-House Energy Accounting (Energy Snapshot)
+### Per-House Energy Accounting (Energy Snapshot)
 For each house `h` and interval `t`, an energy snapshot is computed using the following parameters:
 - Interval production: $$P_h^t$$
 - Interval consumption: $$C_h^t$$
-- Selling price (ask): $$p_h^sell$$
-- Cost price (bid): $$p_h^buy$$
+- Selling price (ask): $$p_h^{sell}$$
+- Cost price (bid): $$p_h^{buy}$$
 - Sell threshold: $$θ_h$$
 - Historical grid import: $$G_{h, import}^{hist}$$
 - Historical grid export: $$G_{h, export}^{hist}$$
 
-## Threshold-Based Grid Commitment
+### Threshold-Based Grid Commitment
 A fixed minimum quantity of generated energy is exported to the grid each time interval. This is to ensure that a user
 can use the excess energy generated to compensate for grid imports in the future if needed.
 
@@ -83,7 +83,7 @@ The remaining production becomes eligible for local trading:
 
 $$ P_h^{avail} = P_h^t - G_{h,export}^{threshold}$$
 
-## Net Metering of Historical Consumption
+### Net Metering of Historical Consumption
 Let the net historical grid deficit for a house `h` at time interval `t` be:
 
 $$ D_h^{prev} = max(0, G_{h, import}^{hist} - G_{h, export}^{hist}) $$
@@ -91,4 +91,27 @@ $$ D_h^{prev} = max(0, G_{h, import}^{hist} - G_{h, export}^{hist}) $$
 The available production $$P_h^{avail}$$ first offsets this deficit. Any energy used for this purpose is still settled
 through the grid to preserve net-metering consistency. 
 
-## Current Interval Consumption Matching
+### Current Interval Consumption Matching
+If remaining production satisfies consumption:
+
+$$P_h^{avail} \geq C_h^t$$
+
+then:
+- consumption is fully met
+- surplus is created
+
+else:
+- all production is absorbed by the house
+- a deficit remains
+
+Formally:
+
+$$surplus_h = max(0, P_h^{avail} - C_h^t)$$
+$$deficit_h = max(0, C_h^t - P_h^{avail})$$
+
+### Snapshot Output
+Finally, each house publishes
+
+$$S^t_h = (surplus_h, deficit_h, p_h^{sell}, p_h^{buy}$$
+
+These snapshots form the inputs to the P2P market.
