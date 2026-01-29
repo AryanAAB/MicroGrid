@@ -233,3 +233,5 @@ The NetP2P energy trading in a residential microgrid provides several economic a
   - The total tradable energy in a clearing window is distributed proportionally among participating houses, ensuring that **no single participant captures a disproportionate share of the trade**.
 - **Time-Interval Fairness**
   - Short time intervals (e.g., 15 minutes to 1 hour) ensure that **energy produced at a given time is matched with contemporaneous consumption**, preventing producers from supplying future demand at the expense of participants consuming simultaneously.
+
+## Simulation

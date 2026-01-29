@@ -2,6 +2,7 @@ package org.example.microgrid.lan;
 
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
+import org.example.microgrid.lan.policy.NetP2PPolicy;
 import org.example.microgrid.lan.policy.TradePolicy;
 
 import java.time.Instant;
@@ -23,10 +24,20 @@ public class LAN
         this.tradePolicy = tradePolicy;
     }
 
+    public LAN(Grid grid)
+    {
+        this(grid, new NetP2PPolicy());
+    }
+
+    public LAN()
+    {
+        this(new Grid(10, 3));
+    }
+
     public void addHouse(House house)
     {
         houses.put(house.getHouseId(), house);
-        bills.put(house.getHouseId(), new Bill());
+        bills.put(house.getHouseId(), new Bill(grid));
     }
 
     public void runMarketCycle()
@@ -59,6 +70,11 @@ public class LAN
         return bills.get(houseId);
     }
 
+    public List<Bill> getBills()
+    {
+        return new ArrayList<>(bills.values());
+    }
+
     public Grid getGrid()
     {
         return grid;
@@ -67,13 +83,5 @@ public class LAN
     public void resetStats()
     {
         bills.values().forEach(Bill::clear);
-    }
-    public List<Bill> getBills()
-    {
-        List<Bill> ans = new ArrayList<>();
-        for(Bill bill:bills.values()){
-            ans.add(bill);
-        }
-        return ans;
     }
 }

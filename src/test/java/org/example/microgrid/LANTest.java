@@ -67,7 +67,7 @@ public class LANTest
 
         double expectedAmount = totalEnergy >= 0 ? totalEnergy * grid.buyPrice() : totalEnergy * grid.sellPrice();
 
-        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(grid), 0.001);
+        assertEquals(expectedAmount, lan.getBill(house.getHouseId()).getNetBill(), 0.001);
     }
 
     @Test
@@ -203,9 +203,9 @@ public class LANTest
 
         new NetP2PPolicy().trade(lan, sellerList, buyerList);
 
-        assertEquals(-21.0, lan.getBill("S1").getNetBill(grid), 1e-9);
-        assertEquals(-8.0, lan.getBill("S2").getNetBill(grid), 1e-9);
-        assertEquals(59.0, lan.getBill("B").getNetBill(grid), 1e-9);
+        assertEquals(-21.0, lan.getBill("S1").getNetBill(), 1e-9);
+        assertEquals(-8.0, lan.getBill("S2").getNetBill(), 1e-9);
+        assertEquals(59.0, lan.getBill("B").getNetBill(), 1e-9);
     }
 
     @Test
@@ -289,7 +289,7 @@ public class LANTest
                     bill.getP2PSellAmount(),
                     bill.getP2PCost(),
                     bill.getP2PRevenue(),
-                    bill.getNetBill(grid)
+                    bill.getNetBill()
             );
         });
 

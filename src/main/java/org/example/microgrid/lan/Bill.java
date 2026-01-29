@@ -9,9 +9,14 @@ public class Bill
 {
     private final List<P2PTrade> p2pBuys = new ArrayList<>();
     private final List<P2PTrade> p2pSells = new ArrayList<>();
-
+    private final Grid grid;
     private double gridImported;
     private double gridExported;
+
+    public Bill(Grid grid)
+    {
+        this.grid = grid;
+    }
 
     // ---------- P2P ----------
     public void addP2PBuy(double energy, double price)
@@ -67,7 +72,7 @@ public class Bill
         return p2pSells.stream().mapToDouble(P2PTrade::getValue).sum();
     }
 
-    public double getNetBill(Grid grid)
+    public double getNetBill()
     {
         double cost = getP2PCost() - getP2PRevenue();
 

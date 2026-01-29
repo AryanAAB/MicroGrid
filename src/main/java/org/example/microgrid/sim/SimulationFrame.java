@@ -9,20 +9,25 @@ import org.example.microgrid.lan.policy.NetP2PPolicy;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 public class SimulationFrame extends JFrame
 {
     // Top LAN and Grid (NetMeteringPolicy)
     private final LAN topLAN;
+    private final ArrayList<House> topHouses = new ArrayList<>();
     private final GridPanel topGridPanel;
 
     // Bottom LAN and Grid (NetP2PPolicy)
     private final LAN bottomLAN;
+    private final ArrayList<House> bottomHouses = new ArrayList<>();
     private final GridPanel bottomGridPanel;
 
     private final JButton startBtn = new JButton("Start");
@@ -35,7 +40,7 @@ public class SimulationFrame extends JFrame
     );
     private int stepCounter = 0;
     private static final double FRACTION_OF_DAY_PER_STEP = 1.0 / (24 * 60);
-    private static final int STEP_MS = 10;
+    private static final int STEP_MS = 1;
     private static final int MAX_STEPS = (int) (Constants.SEC_IN_DAY / Constants.STEP_TO_SECONDS);
 
     private int counter = 1;
@@ -114,7 +119,27 @@ public class SimulationFrame extends JFrame
         add(splitPane, BorderLayout.CENTER);
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+        addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                // Stop simulation if running
+                if (simTimer != null && simTimer.isRunning())
+                    simTimer.stop();
+
+                // Print final results
+                printFinalResults();
+
+                // Now safely exit
+                dispose();
+                System.exit(0);
+            }
+        });
+
+
         setVisible(true);
     }
 
@@ -143,7 +168,7 @@ public class SimulationFrame extends JFrame
 
         currentTime = currentTime.plusSeconds(60); // advance 1 minute
 
-        if(currentTime.getHour() == 0 && currentTime.getMinute() == 0)
+        if (currentTime.getHour() == 0 && currentTime.getMinute() == 0)
             countDays++;
 
         updateTimeLabel();
@@ -153,56 +178,94 @@ public class SimulationFrame extends JFrame
         stepCounter %= MAX_STEPS;
     }
 
+    private double rand(double min, double max)
+    {
+        return min + Math.random() * (max - min);
+    }
+
+    private void register(House top, House bottom)
+    {
+        topHouses.add(top);
+        bottomHouses.add(bottom);
+
+        topLAN.addHouse(top);
+        topGridPanel.addHouse(top);
+
+        bottomLAN.addHouse(bottom);
+        bottomGridPanel.addHouse(bottom);
+    }
+
     private void addConsumer()
     {
-        House h1 = new House(
-                "C" + counter,
-                0.0, 1.5, 0.3, 8.0, 6.0
-        );
-        House h2 = new House(
-                "C" + counter++,
-                0.0, 1.5, 0.3, 8.0, 6.0
-        );
+        String id = "C" + counter++;
 
-        topLAN.addHouse(h1);
-        topGridPanel.addHouse(h1);
-        bottomLAN.addHouse(h2);
-        bottomGridPanel.addHouse(h2);
+        double avgConsumption = rand(1.0, 2.5);
+        double sellThreshold = rand(0.2, 0.5);
+        double costPrice = rand(8.0, 9.0);
+        double sellPrice = rand(6.0, 8.0);
+
+        House top = new House(id, 0.0, avgConsumption, sellThreshold, costPrice, sellPrice);
+        House bottom = new House(id, 0.0, avgConsumption, sellThreshold, costPrice, sellPrice);
+
+        register(top, bottom);
     }
 
     private void addProducer()
     {
-        House h1 = new House(
-                "P" + counter,
-                2.0, 0.2, 0.0, 5.0, 8.0
+        String id = "P" + counter++;
+
+        double peakSolar = rand(2, 3.0);
+        double avgConsumption = rand(0.1, 0.4);
+        double sellThreshold = rand(0.0, 0.2);
+        double costPrice = rand(8.0, 9.0);
+        double sellPrice = rand(6.0, 8.0);
+
+        House top = new House(id,
+                peakSolar,
+                avgConsumption,
+                sellThreshold,
+                costPrice,
+                sellPrice
         );
 
-        House h2 = new House(
-                "P" + counter++,
-                2.0, 0.2, 0.0, 5.0, 8.0
+        House bottom = new House(id,
+                peakSolar,
+                avgConsumption,
+                sellThreshold,
+                costPrice,
+                sellPrice
         );
 
-        topLAN.addHouse(h1);
-        topGridPanel.addHouse(h1);
-        bottomLAN.addHouse(h2);
-        bottomGridPanel.addHouse(h2);
+        register(top, bottom);
     }
 
     private void addProsumer()
     {
-        House h1 = new House(
-                "PS" + counter,
-                2.0, 0.4, 0.3, 6.0, 5.0
-        );
-        House h2 = new House(
-                "PS" + counter++,
-                2.0, 0.4, 0.3, 6.0, 5.0
+        String id = "PR" + counter++;
+
+        double peakSolar = rand(2.0, 2.5);
+        double avgConsumption = rand(0.4, 0.5);
+        double sellThreshold = 0.2;
+        double costPrice = rand(8.0, 9.0);
+        double sellPrice = rand(6.0, 8.0);
+
+        House top = new House(id,
+                peakSolar,
+                avgConsumption,
+                sellThreshold,
+                costPrice,
+                sellPrice
         );
 
-        topLAN.addHouse(h1);
-        topGridPanel.addHouse(h1);
-        bottomLAN.addHouse(h2);
-        bottomGridPanel.addHouse(h2);
+        House bottom = new House(id,
+                peakSolar,
+                avgConsumption,
+                sellThreshold,
+                costPrice,
+                sellPrice
+        );
+
+        register(top, bottom);
     }
 
     private void startStopSimulation()
@@ -218,6 +281,29 @@ public class SimulationFrame extends JFrame
             simTimer.start();
             startBtn.setText("Stop");
         }
+    }
+
+    private void printFinalResults()
+    {
+        System.out.println("\n===== SIMULATION ENDED =====");
+
+        System.out.println("\n--- TOP GRID (Net Metering) ---");
+        for (House h : topHouses)
+        {
+            double netAmount = topLAN.getBill(h.getHouseId()).getNetBill();
+            double p2pNetAmount = bottomLAN.getBill(h.getHouseId()).getNetBill();
+
+            System.out.printf(
+                    "House %s : Net Metering %s ₹%.2f P2P %s ₹%.2f%n",
+                    h.getHouseId(),
+                    (netAmount <= 0 ? "Revenue" : "Cost"),
+                    Math.abs(netAmount),
+                    (netAmount <= 0 ? "Revenue" : "Cost"),
+                    Math.abs(p2pNetAmount)
+            );
+        }
+
+        System.out.println("==============================\n");
     }
 
     public static void main(String[] args)

@@ -45,7 +45,7 @@ public class GridPanel extends JPanel
                         Bill bill = lan.getBill(v.house().getHouseId());
                         if (bill != null)
                         {
-                            double netBill = bill.getNetBill(lan.getGrid());
+                            double netBill = bill.getNetBill();
                             String revenueOrCost = netBill <= 0 ? "Revenue" : "Cost";
 
                             String tooltip = String.format(
