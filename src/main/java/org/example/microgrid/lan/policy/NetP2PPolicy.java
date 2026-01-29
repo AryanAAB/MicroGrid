@@ -1,4 +1,4 @@
-package org.example.microgrid.lan.Policy;
+package org.example.microgrid.lan.policy;
 
 import org.example.microgrid.house.House;
 import org.example.microgrid.lan.EnergySnapshot;

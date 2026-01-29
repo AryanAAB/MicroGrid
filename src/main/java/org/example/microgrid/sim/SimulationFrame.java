@@ -4,8 +4,8 @@ import org.example.microgrid.constants.Constants;
 import org.example.microgrid.grid.Grid;
 import org.example.microgrid.house.House;
 import org.example.microgrid.lan.LAN;
-import org.example.microgrid.lan.Policy.NetMeteringPolicy;
-import org.example.microgrid.lan.Policy.NetP2PPolicy;
+import org.example.microgrid.lan.policy.NetMeteringPolicy;
+import org.example.microgrid.lan.policy.NetP2PPolicy;
 
 import javax.swing.*;
 import java.awt.*;

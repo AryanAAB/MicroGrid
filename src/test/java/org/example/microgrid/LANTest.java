@@ -6,9 +6,9 @@ import org.example.microgrid.house.House;
 import org.example.microgrid.lan.Bill;
 import org.example.microgrid.lan.EnergySnapshot;
 import org.example.microgrid.lan.LAN;
-import org.example.microgrid.lan.Policy.NetMeteringPolicy;
-import org.example.microgrid.lan.Policy.NetP2PPolicy;
-import org.example.microgrid.lan.Policy.TradePolicy;
+import org.example.microgrid.lan.policy.NetMeteringPolicy;
+import org.example.microgrid.lan.policy.NetP2PPolicy;
+import org.example.microgrid.lan.policy.TradePolicy;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
