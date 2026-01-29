@@ -245,5 +245,3 @@ net-metering.
 (as shown for consumers). A green house represents total production is much higher than total consumption (as shown for
 producers). A color in between for prosumers represents that consumption and production is near the same value.</figcaption>
 </figure>
-
-![img.png](images/Simulator.png)
