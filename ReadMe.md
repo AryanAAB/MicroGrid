@@ -125,8 +125,8 @@ These snapshots form the inputs to the P2P market.
 ## Market Participant Classification
 Houses are partitioned into two disjoint sets:
 
-- Sellers: $$\mathcal{S} = {h | surplus_h > 0}$$
-- Buyers: $$\mathcal{B} = {h | deficit_h > 0}$$
+- Sellers: $$\mathcal{S} = \{h | surplus_h > 0\}$$
+- Buyers: $$\mathcal{B} = \{h | deficit_h > 0\}$$
 
 ## Market Ordering
 To perform price-based clearing,
@@ -143,11 +143,10 @@ This ordering ensures that
 - lowest-cost energy is supplied first
 - highest-value demand is satisfied first
 
-This is done so that energy is allocated to its highest-valued use at the lowest possible local cost, thereby 
-maximizing social welfare within the microgrid while guaranteeing that no buyer pays more than their bid and no seller 
-receives less than their ask. Moreover, highest-value demand is satisfied first because buyers with larger energy deficits 
-experience greater marginal utility from additional energy. Prioritizing such demand ensures that limited local supply 
-is allocated to those for whom the energy is most immediately useful.
+This is done so that energy is allocated to the highest-priced demand first because buyers with greater willingness to pay
+derive higher marginal utility from energy consumption. Moreover, for a given price, highest-value demand is satisfied 
+first because buyers with larger energy deficits experience greater utility from additional energy. Prioritizing such
+demand ensures that limited local supply is allocated to those for whom the energy is most immediately useful.
 
 ## Window-Based Market Clearing
 The algorithm proceeds by selecting price and deficit/surplus homogenous windows of buyers and sellers. That is, all
@@ -200,6 +199,7 @@ After each clearing step,
 - satisfied buyers are removed
 - exhausted sellers are removed
 - the process repeats
+
 until,
 - demand is zero
 - supply is zero
@@ -219,7 +219,7 @@ The NetP2P energy trading in a residential microgrid provides several economic a
   - Participants see a **direct economic return from generating surplus energy**, making investments in rooftop solar and other renewable energies more attractive.
   - This creates a **positive feedback loop**: more local generation → more local trading → more economic benefits.
 - **Reduced Grid Dependency and Infrastructure Costs**
-  - By satisfying local demand with local generation, over time, the system **reduces peak load on the grid**.
+  - By satisfying local demand with local generation, the system **reduces peak load on the grid** over time.
   - **Less reliance on grid energy** can reduce costs for both utilities and consumers.
 
 ## Fairness in NetP2P Energy Trading
@@ -230,6 +230,6 @@ The NetP2P energy trading in a residential microgrid provides several economic a
 - **Intra-Window Fairness**
   - Houses grouped within the **same price–surplus or price–deficit window are allocated energy uniformly**, preventing arbitrary preference among participants with identical economic and energy characteristics.
 - **Proportional Allocation**
-  - he total tradable energy in a clearing window is distributed proportionally among participating houses, ensuring that **no single participant captures a disproportionate share of the trade**.
+  - The total tradable energy in a clearing window is distributed proportionally among participating houses, ensuring that **no single participant captures a disproportionate share of the trade**.
 - **Time-Interval Fairness**
   - Short time intervals (e.g., 15 minutes to 1 hour) ensure that **energy produced at a given time is matched with contemporaneous consumption**, preventing producers from supplying future demand at the expense of participants consuming simultaneously.
