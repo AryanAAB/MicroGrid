@@ -1,8 +1,5 @@
 package org.example.microgrid.lan;
 
-import org.example.microgrid.house.House;
-import org.example.microgrid.registry.MeterRegistry;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,7 +16,8 @@ public class LANManager
         initializeMapping();
     }
 
-    public void initializeMapping(){
+    public void initializeMapping()
+    {
         // Initialize Firebase users.
         // Every user has a meterID.
         // The first letter of the meter ID is the ID of the newly created lan.

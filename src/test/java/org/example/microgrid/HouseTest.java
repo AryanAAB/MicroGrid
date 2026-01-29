@@ -2,7 +2,6 @@ package org.example.microgrid;
 
 import org.example.microgrid.constants.Constants;
 import org.example.microgrid.house.House;
-import org.example.microgrid.meter.Meter;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -119,7 +118,7 @@ public class HouseTest
                 house.resetIntervalStats();
             }
 
-            current = current.plusSeconds((long)(Constants.STEP_TO_SECONDS));
+            current = current.plusSeconds((long) (Constants.STEP_TO_SECONDS));
         }
 
         plotNetEnergy(netEnergySeries);

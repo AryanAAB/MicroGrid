@@ -24,7 +24,7 @@ public class NetMeteringPolicy implements TradePolicy
 
     private void exchangeWithGrid(LAN lan, List<EnergySnapshot> snapshots)
     {
-        for(EnergySnapshot snap : snapshots)
+        for (EnergySnapshot snap : snapshots)
         {
             lan.getBill(snap.houseId()).addGridImport(snap.gridImport());
             lan.getBill(snap.houseId()).addGridExport(snap.gridExport());

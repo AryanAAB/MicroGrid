@@ -9,5 +9,6 @@ import java.util.List;
 public interface TradePolicy
 {
     public abstract void trade(LAN lan, List<EnergySnapshot> haveSurplus, List<EnergySnapshot> haveDeficit);
+
     public abstract EnergySnapshot getEnergySnapshot(LAN lan, House house);
 }

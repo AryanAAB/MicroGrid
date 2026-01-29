@@ -76,7 +76,7 @@ public class Bill
     {
         double cost = getP2PCost() - getP2PRevenue();
 
-        if(gridExported >= gridImported)
+        if (gridExported >= gridImported)
         {
             cost -= (gridExported - gridImported) * grid.sellPrice();
         }

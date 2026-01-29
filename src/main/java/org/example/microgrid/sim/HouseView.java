@@ -29,7 +29,7 @@ public class HouseView
         // ---- color logic (simple but intuitive) ----
         // greener → more solar, redder → more consumer
         float solar = (float) house.getTotalProduction();
-        float load = (float)house.getTotalConsumption();
+        float load = (float) house.getTotalConsumption();
 
         float red = (solar + load <= 1e-5) ? 0 : load / (solar + load);
         float green = (solar + load <= 1e-5) ? 0 : solar / (solar + load);

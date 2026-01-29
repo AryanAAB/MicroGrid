@@ -60,7 +60,7 @@ public class MeterTest
                 Constants.STEP_TO_SECONDS / (double) Constants.SEC_IN_DAY;
 
         Instant start = Instant.now();
-        Instant now  = start;
+        Instant now = start;
 
         for (int i = 0; i < 2 * steps; i++)
         {
@@ -81,7 +81,7 @@ public class MeterTest
 
             timeList.add(1.0 * Duration.between(start, time).toSeconds() / Constants.SEC_IN_HOUR);
 
-            now = now.plusSeconds((long)(Constants.STEP_TO_SECONDS));
+            now = now.plusSeconds((long) (Constants.STEP_TO_SECONDS));
         }
 
         // After simulation, energy should be positive
