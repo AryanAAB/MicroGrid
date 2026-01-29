@@ -79,5 +79,9 @@ A fixed minimum quantity of generated energy is exported to the grid each time i
 can use the excess energy generated to compensate for grid imports in the future if needed.
 
 <div align="center">
-<span>G<sub>h,export</sub><sup>threshold</sup></span>
+<span>
+  G
+  <span style="font-size: 0.8em; vertical-align: sub;">h,export</span>
+  <span style="font-size: 0.8em; vertical-align: super;">threshold</span>
+</span>
 </div>
