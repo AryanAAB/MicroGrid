@@ -11,10 +11,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class GridPanel extends JPanel
 {
@@ -28,33 +25,50 @@ public class GridPanel extends JPanel
     private static final int START_X = 90;
     private static final int START_Y = 30;
 
-    // ---- State ----
-    private final LAN lan;
     private final List<HouseView> views = new ArrayList<>();
-    private final Map<String, Rectangle> houseBounds = new HashMap<>();
-    private Consumer<House> onSelect;
 
     public GridPanel(LAN lan)
     {
-        this.lan = lan;
+        // ---- State ----
         setBackground(Color.WHITE);
 
         // Mouse selection
-        addMouseListener(new MouseAdapter()
+        addMouseMotionListener(new MouseAdapter()
         {
             @Override
-            public void mouseClicked(MouseEvent e)
+            public void mouseMoved(MouseEvent e)
             {
                 for (HouseView v : views)
                 {
                     if (v.contains(e.getPoint()))
                     {
-                        if (onSelect != null)
-                            onSelect.accept(v.house());
-                        repaint();
-                        return;
+                        Bill bill = lan.getBill(v.house().getHouseId());
+                        if (bill != null)
+                        {
+                            double netBill = bill.getNetBill(lan.getGrid());
+                            String revenueOrCost = netBill <= 0 ? "Revenue" : "Cost";
+
+                            String tooltip = String.format(
+                                    "<html>House: %s<br/>" +
+                                            "P2P Buy: %.2f kWh (₹%.2f)<br/>" +
+                                            "P2P Sell: %.2f kWh (₹%.2f)<br/>" +
+                                            "Grid Import: %.2f kWh<br/>" +
+                                            "Grid Export: %.2f kWh<br/>" +
+                                            "%s: ₹%.2f</html>",
+                                    v.house().getHouseId(),
+                                    bill.getP2PBuyAmount(), bill.getP2PCost(),
+                                    bill.getP2PSellAmount(), bill.getP2PRevenue(),
+                                    bill.getGridImported(),
+                                    bill.getGridExported(),
+                                    revenueOrCost,
+                                    Math.abs(netBill) // always show positive value
+                            );
+                            setToolTipText(tooltip);
+                            return;
+                        }
                     }
                 }
+                setToolTipText(null);
             }
         });
 
@@ -86,7 +100,6 @@ public class GridPanel extends JPanel
         }
 
         Rectangle r = new Rectangle(p.x, p.y, HOUSE_WIDTH, HOUSE_HEIGHT);
-        houseBounds.put(house.getHouseId(), r);
         views.add(new HouseView(house, p));
         repaint();
     }
@@ -98,21 +111,9 @@ public class GridPanel extends JPanel
         {
             Point p = computePosition(i);
             views.get(i).setPosition(p);
-            houseBounds.put(views.get(i).house().getHouseId(),
-                    new Rectangle(p.x, p.y, HOUSE_WIDTH, HOUSE_HEIGHT));
         }
 
         repaint();
-    }
-
-    private Point p2pHub()
-    {
-        return new Point(getWidth() - 60, getHeight() / 2);
-    }
-
-    private Point gridPoint()
-    {
-        return new Point(40, getHeight() / 2);
     }
 
     private Point computePosition(int index)
@@ -145,11 +146,10 @@ public class GridPanel extends JPanel
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
 
-        // reset stroke to default for houses
         g2.setStroke(new BasicStroke(1.0f));
 
         for (HouseView v : views)
-            v.draw(g2);       // layer 3: houses on top
+            v.draw(g2);
 
         g2.dispose();
     }
