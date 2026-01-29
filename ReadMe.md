@@ -17,7 +17,7 @@ How it works:
 
 ## What is P2P Energy Trading?
 P2P energy trading allows electricity consumers and producers within a local area (microgrid) to trade energy directly 
-with each other, instead of relying entirely on a central utility grid.
+with each other  instead of relying entirely on a central utility grid.
 
 Participants may be:
 
@@ -35,3 +35,18 @@ At each interval, every house locally accounts for its energy production, consum
 The following section formally defines the system model, per-house energy accounting, and the market-clearing mechanism used to enable fair and efficient P2P energy exchange while preserving net-metering constraints.
 
 ## System Model
+Consider a microgrid consisting of a set of houses:
+
+<div align="center">
+H = { h1, h2, ..., hN }
+</div>
+
+Each house may simultaneously:
+- consume electrical energy
+- generate electrical energy (eg. rooftop solar panels)
+- participate in local P2P trading
+- exchange residual energy with the utility grid
+
+Time is discretized into fixed-length intervals t.
+
+## Per-House Energy Accounting (Energy Snapshot)
