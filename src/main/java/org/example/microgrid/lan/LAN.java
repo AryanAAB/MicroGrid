@@ -68,4 +68,9 @@ public class LAN
     {
         bills.values().forEach(Bill::clear);
     }
+    public List<Bill> getBills()
+    {
+              
+        bills.values().forEach(bill::getBill).;
+    }
 }
