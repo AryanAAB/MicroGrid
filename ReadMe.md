@@ -34,7 +34,7 @@ The grid acts as a backup, not the first option.
 
 <figure>
   <img src="images/Producer.png" alt="Sample meter reading of a producer">
-  <figcaption style="text-align: center;">Figure 1: Sample meter reading of a producer</figcaption>
+  <figcaption style="text-align: center;">Figure 2: Sample meter reading of a producer</figcaption>
 </figure>
 
 <figure>
@@ -66,10 +66,18 @@ Each house may simultaneously:
 Time is discretized into fixed-length intervals t.
 
 ## Per-House Energy Accounting (Energy Snapshot)
-For each house h and interval t, an Energy Snapshot is computed.
+For each house h and interval t, an Energy Snapshot is computed using the following parameters:
 - Interval production: P<sub>h</sub><sup>t</sup>
-- Interval consumption: C_h^t
-- Selling price (ask): p_h^sell
-- Cost price (bid): p_h^buy
-- Sell threshold: θ_h
-- Historical net grid consumption from previous intervals: G_h^(t−1)
+- Interval consumption: C<sub>h</sub><sup>t</sup>
+- Selling price (ask): p<sub>h</sub><sup>sell</sup>
+- Cost price (bid): p<sub>h</sub><sup>buy</sup>
+- Sell threshold: θ<sub>h</sub>
+- Historical net grid consumption from previous intervals
+
+## Threshold-Based Grid Commitment
+A fixed minimum quantity of generated energy is exported to the grid each time interval. This is to ensure that a user
+can use the excess energy generated to compensate for grid imports in the future if needed.
+
+<div align="center">
+<span>G<sub>h,export</sub><sup>threshold</sup></span>
+</div>
