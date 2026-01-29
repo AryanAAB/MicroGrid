@@ -46,7 +46,7 @@ public class LANManager {
     }
 
     public ArrayList<Bill>  getBills(){
-         ArrayList<Bill> resultsList = lans.values().stream().map((key, lan)::lan.getBill()).collect(Collectors.toList());
+         ArrayList<Bill> resultsList = lans.values().stream().map((key, lan)::lan.getBills()).collect(Collectors.toList());
         return resultList;
     }
 }
