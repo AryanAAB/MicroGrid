@@ -235,3 +235,15 @@ The NetP2P energy trading in a residential microgrid provides several economic a
   - Short time intervals (e.g., 15 minutes to 1 hour) ensure that **energy produced at a given time is matched with contemporaneous consumption**, preventing producers from supplying future demand at the expense of participants consuming simultaneously.
 
 ## Simulation
+Simulating the system with 30 houses of which 13 are consumers, 12 are prosumers with low solar energy, and 5 are prosumers
+with high solar energy, gave a reduction in total cost by 10% and an increase in total revenue by 147% when compared to baseline
+net-metering. 
+
+<figure>
+  <img src="images/Simulator.png" alt="Simulator">
+  <figcaption style="text-align: center;">A red house represents total consumption is much higher than total production 
+(as shown for consumers). A green house represents total production is much higher than total consumption (as shown for
+producers). A color in between for prosumers represents that consumption and production is near the same value.</figcaption>
+</figure>
+
+![img.png](images/Simulator.png)
