@@ -90,6 +90,16 @@ public class House
         return intervalProductionKwh;
     }
 
+    public double getTotalConsumption()
+    {
+        return meter.getImportEnergy();
+    }
+
+    public double getTotalProduction()
+    {
+        return meter.getExportEnergy();
+    }
+
     public double getSellThreshold()
     {
         return sellThreshold;
