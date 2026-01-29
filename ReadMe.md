@@ -1,8 +1,7 @@
 # Net P2P Energy Trading Microgrid
 
 This project is a net metering + peer-to-peer (P2P) energy trading simulation for a residential microgrid. It models how 
-houses with different consumption and generation profiles interact with each other and with the main grid under various 
-energy trading policies.
+houses with different consumption and generation profiles interact with each other and with the main grid under the net metering + peer-to-peer trading policy.
 
 ## What is Net Metering?
 Net Metering is a billing mechanism that lets consumers who generate their own electricity (usually using solar panels) 
@@ -10,7 +9,7 @@ send excess electricity to the grid and get credited for it.
 
 How it works:
 
-- When solar panels produce more power than usage, the extra energy is exported to the grid.
+- When solar panels produce more electricity than usage, the extra energy is exported to the grid.
 - When consumption is higher than generation, energy is imported from the grid.
 - The electricity meter keeps track of both import and export.
 - At the end of the billing period, one pays for the net energy (energy imported - energy exported).
@@ -25,7 +24,7 @@ Participants may be:
 - Producers – generate surplus energy (e.g., solar PV)
 - Prosumers – both consume and generate energy
 
-The grid acts as a backup, not the first option.
+In case of any surplus or deficit, the main grid acts as a backup but is not the first option.
 
 <figure>
   <img src="images/Consumer.png" alt="Sample meter reading of a consumer">
@@ -75,7 +74,7 @@ For each house `h` and interval `t`, an energy snapshot is computed using the fo
 
 The time interval is typically kept short, such as 15 minutes to 1 hour, to ensure fairness in energy allocation. Short 
 intervals allow energy produced by a participant at a given time to be matched with consumption occurring simultaneously. 
-Longer intervals could allow a producer’s energy to be allocated to consumers whose demand occurs much later, which may 
+Longer intervals could allow a producer’s energy to be allocated to consumers whose demands occur much later, which may 
 disadvantage participants who are consuming at the same time the energy is produced.
 
 ### Threshold-Based Grid Commitment
@@ -86,15 +85,17 @@ $$G_{h,export}^{threshold} = min(θ_h,P_h^t)$$
 
 The remaining production becomes eligible for local trading:
 
-$$ P_h^{avail} = P_h^t - G_{h,export}^{threshold}$$
+$$ P_h^{thresh} = P_h^t - G_{h,export}^{threshold}$$
 
 ### Net Metering of Historical Consumption
 Let the net historical grid deficit for a house `h` at time interval `t` be:
 
 $$ D_h^{prev} = max(0, G_{h, import}^{hist} - G_{h, export}^{hist}) $$
 
-The available production $$P_h^{avail}$$ first offsets this deficit. Any energy used for this purpose is still settled
+The available production after threshold $$P_h^{thresh}$$ first offsets this deficit. Any energy used for this purpose is still settled
 through the grid to preserve net-metering consistency. 
+
+$$P_h^{avail} = max(0, P_h^{thresh} - D_h^{prev})$$
 
 ### Current Interval Consumption Matching
 If remaining production satisfies consumption:
