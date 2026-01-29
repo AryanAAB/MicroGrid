@@ -41,8 +41,8 @@ public class LANManager {
         lans.forEach((key, lan) -> lan.runMarketCycle());
     }
     
-    public void  step(){
-        lans.forEach((key, lan) -> lan.step());
+    public void  step(Instant timestamp, double fractionOfDay){
+        lans.forEach((key, lan) -> lan.step(timestamp, fractionOfDay));
     }
 
     public ArrayList<Bill>  getBills(){
