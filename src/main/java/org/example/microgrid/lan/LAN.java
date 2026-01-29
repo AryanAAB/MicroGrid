@@ -74,5 +74,6 @@ public class LAN
         for(Bill bill:bills.values()){
             ans.add(bill);
         }
+        return ans;
     }
 }
