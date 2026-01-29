@@ -73,6 +73,11 @@ For each house `h` and interval `t`, an energy snapshot is computed using the fo
 - Historical grid import: $$G_{h, import}^{hist}$$
 - Historical grid export: $$G_{h, export}^{hist}$$
 
+The time interval is typically kept short, such as 15 minutes to 1 hour, to ensure fairness in energy allocation. Short 
+intervals allow energy produced by a participant at a given time to be matched with consumption occurring simultaneously. 
+Longer intervals could allow a producer’s energy to be allocated to consumers whose demand occurs much later, which may 
+disadvantage participants who are consuming at the same time the energy is produced.
+
 ### Threshold-Based Grid Commitment
 A fixed minimum quantity of generated energy is exported to the grid each time interval. This is to ensure that a user
 can use the excess energy generated to compensate for grid imports in the future if needed.
@@ -115,3 +120,109 @@ Finally, each house publishes
 $$S^t_h = (surplus_h, deficit_h, p_h^{sell}, p_h^{buy}$$
 
 These snapshots form the inputs to the P2P market.
+
+## Market Participant Classification
+Houses are partitioned into two disjoint sets:
+
+- Sellers: $$\mathcal{S} = {h | surplus_h > 0}$$
+- Buyers: $$\maathcal{B} = {h | deficit_h > 0}$$
+
+## Market Ordering
+To perform price-based clearing,
+
+sellers are sorted by
+- increasing selling price
+- decreasing surplus
+
+buyers are sorted by
+- decreasing buying price
+- increasing deficit
+
+This ordering ensures that
+- lowest-cost energy is supplied first
+- highest-value demand (households which will benefit the most from P2P) is satisfied first
+
+## Window-Based Market Clearing
+The algorithm proceeds by selecting price and deficit/surplus homogenous windows of buyers and sellers. That is, all
+participants who are selling or buying at the same price and have the same deficit or surplus are treated equally by the 
+algorithm. This ensures fairness for all participants.
+
+This forms two windows
+- $$\mathcal{B}$$ the buyer window in which all buyers have the same deficit and the same buying price
+- $$\mathcal{S}$$ the seller window in which all sellers have the same surplus and the same selling price
+
+Let:
+- `b` be the buyer representative
+- `s` be the seller representative
+
+Market clearing proceeds only if
+
+$$p_b^{buy} \geq p_s^{sell}$$
+
+Otherwise, no mutually beneficial trade exists. 
+
+## Aggregation
+Within each window, let
+
+$$ \mathcal{D} = \sum \text{deficit} $$
+$$ \mathcal{S} = \sum \text{surplus} $$
+
+The traded energy is
+
+$$ \mathcal{E} = min(\mathcal{D}, \mathcal{S}) $$
+
+The transaction price is the mid-market clearing price:
+
+$$ p = \frac{p_b^{buy} + p_s^{sell}}{2} $$
+
+## Allocation Rule
+Energy is allocated uniformly within the active window (since each seller has the same surplus and each buyer has the same deficit in a window).
+
+Each buyer receives
+
+$$ \frac{E}{|B_{window}|} $$
+
+Each seller supplies:
+
+$$ \frac{E}{|S_{window}|} $$
+
+This avoids intra-window discrimination and simplifies settlement.
+
+## Iterative Clearing
+After each clearing step,
+- satisfied buyers are removed
+- exhausted sellers are removed
+- the process repeats
+until,
+- demand is zero
+- supply is zero
+- or price compatibility fails
+
+The residual energy is settled with the grid.
+
+## Economic Interpretation
+The NetP2P energy trading in a residential microgrid provides several economic advantages over traditional net metering policy:
+- **Reduced Energy Costs for Participants**
+  - Buyers can purchase energy locally at prices typically lower than the grid purchase rates, while sellers can earn revenue by selling excess energy to neighbors instead of exporting at lower feed-in tariffs.
+  - This reduces net electricity costs for the community and increases incentives for local generation (e.g., solar PV).
+- **Optimal Local Utilization of Renewable Energy**
+  - Because energy is produced and consumed locally, **local energy has lower technical losses such as transmission costs and peak charges**, so the effective cost per kWh is lower for buyers.
+  - The **P2P price reflects this lower marginal cost** while still rewarding the sellers.
+- **Encouragement of Renewable Investment**
+  - Participants see a **direct economic return from generating surplus energy**, making investments in rooftop solar and other renewable energies more attractive.
+  - This creates a **positive feedback loop**: more local generation → more local trading → more economic benefits.
+- **Reduced Grid Dependency and Infrastructure Costs**
+  - By satisfying local demand with local generation, over time, the system **reduces peak load on the grid**.
+  - **Less reliance on grid energy** can reduce costs for both utilities and consumers.
+
+## Fairness in NetP2P Energy Trading
+- **Self-Consumption and Net-Metering Fairness**
+  - Each house is allowed to first satisfy its **own cumulative demand** using its generated energy through net metering before participating in P2P trading.
+  - Each house also has an option to include a threshold value before selling to P2P trading to **allow current generation to satisfy future demand**.
+  - This ensures participants are not disadvantaged for investing in local generation and are not forced to sell energy externally while still having unmet personal demand.
+- **Intra-Window Fairness**
+  - Houses grouped within the **same price–surplus or price–deficit window are allocated energy uniformly**, preventing arbitrary preference among participants with identical economic and energy characteristics.
+- **Proportional Allocation**
+  - he total tradable energy in a clearing window is distributed proportionally among participating houses, ensuring that **no single participant captures a disproportionate share of the trade**.
+- **Time-Interval Fairness**
+  - Short time intervals (e.g., 15 minutes to 1 hour) ensure that **energy produced at a given time is matched with contemporaneous consumption**, preventing producers from supplying future demand at the expense of participants consuming simultaneously.
