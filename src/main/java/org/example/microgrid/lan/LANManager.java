@@ -36,4 +36,17 @@ public class LANManager {
         lan.addHouse(house);
         return lan;
     }
+
+    public void  runMarketCycles(){
+        lans.forEach((key, lan) -> lan.runMarketCycle());
+    }
+    
+    public void  step(){
+        lans.forEach((key, lan) -> lan.step());
+    }
+
+    public ArrayList<Bill>  getBills(){
+         ArrayList<Bill> resultsList = lans.values().stream().map((key, lan)::lan.getBill()).collect(Collectors.toList());
+        return resultList;
+    }
 }
