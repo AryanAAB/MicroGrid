@@ -27,6 +27,12 @@ Participants may be:
 
 The grid acts as a backup, not the first option.
 
+<figure>
+  <img src="images/Prosumer.png" alt="Sample meter reading of a prosumer">
+  <figcaption>Figure 1: Sample meter reading of a prosumer</figcaption>
+</figure>
+
+
 ## Modeling Net Metering with P2P Trading
 To combine net metering and peer-to-peer energy trading in a single coherent framework, the microgrid is modeled as a set of interacting houses operating over discrete time intervals.
 
@@ -38,7 +44,7 @@ The following section formally defines the system model, per-house energy accoun
 Consider a microgrid consisting of a set of houses:
 
 <div align="center">
-H = { h1, h2, ..., hN }
+H = { h<sub>1</sub>, h<sub>2</sub>, ..., h<sub>N</sub> }
 </div>
 
 Each house may simultaneously:
@@ -49,4 +55,7 @@ Each house may simultaneously:
 
 Time is discretized into fixed-length intervals t.
 
+
+
 ## Per-House Energy Accounting (Energy Snapshot)
+For each house h and interval t, an Energy Snapshot is computed.
