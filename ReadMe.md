@@ -78,4 +78,4 @@ For each house h and interval t, an Energy Snapshot is computed using the follow
 A fixed minimum quantity of generated energy is exported to the grid each time interval. This is to ensure that a user
 can use the excess energy generated to compensate for grid imports in the future if needed.
 
-\( G_{h,\text{export}}^{\text{threshold}} \)
+$$G_{h,export}^{threshold}$$
