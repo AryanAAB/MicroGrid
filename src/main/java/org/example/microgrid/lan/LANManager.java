@@ -1,5 +1,7 @@
 package org.example.microgrid.lan;
 
+import org.example.microgrid.house.House;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;

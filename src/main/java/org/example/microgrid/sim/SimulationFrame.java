@@ -90,8 +90,8 @@ public class SimulationFrame extends JFrame
 
         startBtn.addActionListener(e -> startStopSimulation());
 
-        JLabel topBuyLabel = new JLabel("Top Grid Buy: ₹" + topGrid.buyPrice());
-        JLabel topSellLabel = new JLabel("Top Grid Sell: ₹" + topGrid.sellPrice());
+        JLabel topBuyLabel = new JLabel("Grid Buy: ₹" + topGrid.buyPrice());
+        JLabel topSellLabel = new JLabel("Grid Sell: ₹" + topGrid.sellPrice());
 
         updateTimeLabel();
 
